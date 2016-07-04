@@ -19,9 +19,26 @@ namespace RNG_DungeonCrawler.Objects.Individual
             fieldType = type;
         }
 
-        internal static bool trespass(string type)
+        internal bool trespass()
         {
-            return (type=="wall"? false: true);
+            return (fieldType=="ground"? true: false);
+        }
+
+        internal string comfyView()
+        {
+            switch (fieldType)
+            {
+                case "wall":
+                    return "[X]";
+                case "ground":
+                    return "[ ]";
+                case "treasure":
+                    return "[O]";
+                case "enemy":
+                    return "[E]";
+                default:
+                    return "";
+            }
         }
     }
 }

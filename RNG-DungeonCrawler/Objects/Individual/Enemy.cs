@@ -8,8 +8,8 @@ namespace RNG_DungeonCrawler.Objects.Individual
 {
     class Enemy
     {
-        internal int axisX { get; }
-        internal int axisY { get; }
+        internal int axisX { get; set; }
+        internal int axisY { get; set; }
 
         internal List<Specific.Weapon> wDropList;
         internal List<Specific.Armor> aDropList;
@@ -44,13 +44,18 @@ namespace RNG_DungeonCrawler.Objects.Individual
                     exp = 20 * difficulty;
                     wDropList.Add(new Specific.Weapon("Echo", 5, 10));
                     break;
-                case "":
-                    HP = 10 * difficulty;
-                    dmg = 2 * difficulty;
-                    exp = 10 * difficulty;
+                case "Ghost":
+                    HP = 30 * difficulty;
+                    dmg = 4 * difficulty;
+                    exp = 40 * difficulty;
                     break;
             }
             enemyType = enemy;
+        }
+
+        public void Move()
+        {
+
         }
     }
 }

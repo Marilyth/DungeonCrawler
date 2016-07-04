@@ -1,1 +1,6 @@
 c:\users\erik\documents\visual studio 2015\Projects\RNG-DungeonCrawler\RNG-DungeonCrawler\bin\Debug\RNG-DungeonCrawler.exe.config
+C:\Users\Erik\documents\visual studio 2015\Projects\RNG-DungeonCrawler\RNG-DungeonCrawler\obj\Debug\RNG-DungeonCrawler.csprojResolveAssemblyReference.cache
+C:\Users\Erik\documents\visual studio 2015\Projects\RNG-DungeonCrawler\RNG-DungeonCrawler\bin\Debug\RNG-DungeonCrawler.exe
+C:\Users\Erik\documents\visual studio 2015\Projects\RNG-DungeonCrawler\RNG-DungeonCrawler\bin\Debug\RNG-DungeonCrawler.pdb
+C:\Users\Erik\documents\visual studio 2015\Projects\RNG-DungeonCrawler\RNG-DungeonCrawler\obj\Debug\RNG-DungeonCrawler.exe
+C:\Users\Erik\documents\visual studio 2015\Projects\RNG-DungeonCrawler\RNG-DungeonCrawler\obj\Debug\RNG-DungeonCrawler.pdb
