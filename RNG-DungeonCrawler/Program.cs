@@ -9,11 +9,11 @@ namespace RNG_DungeonCrawler
 {
     class Program
     {
-        public static Objects.Dungeon map = new Objects.Dungeon();
+        public static Objects.Dungeon map;
 
         static void Main(string[] args)
         {
-            map = new Objects.Dungeon();
+            map = new Objects.Dungeon(20, 20);
 
             refresh(); 
 
@@ -27,36 +27,44 @@ namespace RNG_DungeonCrawler
         {
             Console.Clear();
 
-            string mapVisual = "";
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < map.mapset.GetLength(1); i++)
             {
-                mapVisual += "\n";
-                for (int j = 0; j < 20; j++)
+                Console.Write("\n");
+                for (int j = 0; j < map.mapset.GetLength(0); j++)
                 {
                     switch (map.mapset[j, i].fieldType)
                     {
                         case "wall":
-                            mapVisual += $"[X]";
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            Console.Write($"[X]");
                             break;
                         case "ground":
-                            mapVisual += $"[ ]";
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            Console.Write($"[ ]");
                             break;
                         case "treasure":
-                            mapVisual += $"[O]";
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write($"[O]");
                             break;
                         case "player":
-                            mapVisual += $"[P]";
+                            Console.ForegroundColor = ConsoleColor.Blue;
+                            Console.Write($"[P]");
                             break;
                         case "enemy":
-                            mapVisual += $"[E]";
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.Write($"[E]");
+                            break;
+                        case "boss":
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            Console.Write($"[B]");
                             break;
                     }
                 }
             }
-
-            Console.WriteLine($"{mapVisual} \n\n ");
-            Console.WriteLine($"Position: {map.user.axisX}X {map.user.axisY}Y\n");
-            Console.WriteLine($"{map.playerSight()}");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n------------------------------------------------------------" +
+                $"\nPosition: {map.user.axisX}X {map.user.axisY}Y\n");
+            Console.WriteLine($"{map.playerSight()}\n\n" + map.user.getStats());
         }
 
         public static void inputCommand()

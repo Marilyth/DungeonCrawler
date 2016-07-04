@@ -11,7 +11,7 @@ namespace RNG_DungeonCrawler.Objects
         internal int axisX { get; set; }
         internal int axisY { get; set; }
 
-        internal int hp, dmg, exp, level;
+        internal int hp, curHp, dmg, exp, level;
 
         public Player(int x, int y, int experience)
         {
@@ -35,7 +35,31 @@ namespace RNG_DungeonCrawler.Objects
             level = i - 1;
 
             hp = level * level + 3;
+            curHp = hp;
             dmg = level * 2;
+        }
+
+        internal string calcNextLevel()
+        {
+            double expCurrentHold = exp - levelCalc(level);
+            string output = "", TempOutput = "";
+            double diffExperience = levelCalc(level + 1) - levelCalc(level);
+            for (int i = 0; i < (expCurrentHold / (diffExperience / 10)); i++)
+            {
+                output += "■";
+            }
+            for (int i = 0; i < 10 - output.Length; i++)
+            {
+                TempOutput += "□";
+            }
+            return output + TempOutput;
+        }
+
+        public string getStats()
+        {
+            return $"HP: {curHp}/{hp}"+
+                   $" Dmg: {dmg}"+
+                   $" Level: {level}  ({calcNextLevel()})";
         }
     }
 }

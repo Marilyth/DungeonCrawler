@@ -36,6 +36,8 @@ namespace RNG_DungeonCrawler.Objects.Individual
                     return "[O]";
                 case "enemy":
                     return "[E]";
+                case "boss":
+                    return "[B]";
                 default:
                     return "";
             }
