@@ -52,10 +52,5 @@ namespace RNG_DungeonCrawler.Objects.Individual
             }
             enemyType = enemy;
         }
-
-        public void Move()
-        {
-
-        }
     }
 }
