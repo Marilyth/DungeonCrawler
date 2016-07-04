@@ -25,7 +25,6 @@ namespace RNG_DungeonCrawler.Objects.Individual
 
             axisX = x;
             axisY = y;
-            enemyType = enemy;
 
             switch (enemy)
             {
