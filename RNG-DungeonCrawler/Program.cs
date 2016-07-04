@@ -13,6 +13,8 @@ namespace RNG_DungeonCrawler
 
         static void Main(string[] args)
         {
+            Console.SetWindowSize(62,32);
+
             map = new Objects.Dungeon(20, 20);
 
             refresh(); 
