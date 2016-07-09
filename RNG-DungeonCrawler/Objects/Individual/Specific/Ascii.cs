@@ -12,8 +12,7 @@ namespace RNG_DungeonCrawler.Objects.Individual.Specific
         public static string art(string enemyType)
         {
             StreamReader sr = new StreamReader($"ascii//{enemyType}.txt");
-            string art = sr.ReadToEnd();
-            return art;
+            return sr.ReadToEnd();
         }
     }
 }
