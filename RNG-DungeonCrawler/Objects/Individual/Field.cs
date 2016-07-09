@@ -10,34 +10,33 @@ namespace RNG_DungeonCrawler.Objects.Individual
     {
         internal int axisX { get; }
         internal int axisY { get; }
-        internal string fieldType { get; set; }
+        internal Type fieldType { get; set; }
 
-        public Field(int x, int y, string type)
+        internal enum Type {Ground, Wall, Treasure, Enemy, Boss, Player};
+
+        public Field(int x, int y, Type type)
         {
             axisX = x;
             axisY = y;
             fieldType = type;
         }
 
-        internal bool trespass()
-        {
-            return (fieldType=="ground"? true: false);
-        }
-
         internal string comfyView()
         {
             switch (fieldType)
             {
-                case "wall":
+                case Type.Wall:
                     return "[X]";
-                case "ground":
+                case Type.Ground:
                     return "[ ]";
-                case "treasure":
-                    return "[O]";
-                case "enemy":
+                case Type.Treasure:
+                    return "[T]";
+                case Type.Enemy:
                     return "[E]";
-                case "boss":
+                case Type.Boss:
                     return "[B]";
+                case Type.Player:
+                    return "[P]";
                 default:
                     return "";
             }

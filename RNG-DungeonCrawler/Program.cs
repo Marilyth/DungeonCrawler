@@ -1,4 +1,5 @@
 ﻿using System;
+using RNG_DungeonCrawler.Objects.Individual.Specific;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,7 +18,7 @@ namespace RNG_DungeonCrawler
 
             map = new Objects.Dungeon(20, 20);
 
-            refresh(); 
+            map.drawMap(); 
 
             while (true)
             {
@@ -25,53 +26,9 @@ namespace RNG_DungeonCrawler
             }
         }
 
-        public static void refresh()
-        {
-            Console.Clear();
-
-            for (int i = 0; i < map.mapset.GetLength(1); i++)
-            {
-                Console.Write("\n");
-                for (int j = 0; j < map.mapset.GetLength(0); j++)
-                {
-                    switch (map.mapset[j, i].fieldType)
-                    {
-                        case "wall":
-                            Console.ForegroundColor = ConsoleColor.Gray;
-                            Console.Write($"[X]");
-                            break;
-                        case "ground":
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            Console.Write($"[ ]");
-                            break;
-                        case "treasure":
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.Write($"[O]");
-                            break;
-                        case "player":
-                            Console.ForegroundColor = ConsoleColor.Blue;
-                            Console.Write($"[P]");
-                            break;
-                        case "enemy":
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.Write($"[E]");
-                            break;
-                        case "boss":
-                            Console.ForegroundColor = ConsoleColor.Magenta;
-                            Console.Write($"[B]");
-                            break;
-                    }
-                }
-            }
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine("\n------------------------------------------------------------" +
-                $"\nPosition: {map.user.axisX}X {map.user.axisY}Y\n");
-            Console.WriteLine($"{map.playerSight()}\n\n" + map.user.getStats());
-        }
-
         public static void inputCommand()
         {
-            Console.WriteLine("\n\nCommands: Left, Right, Up, Down");
+            Console.WriteLine("\n\nCommands:\nMovement: Left, Right, Up, Down\nCombat: Attack\nSystem: Refresh");
 
             switch (Console.ReadLine().ToLower())
             {
@@ -87,8 +44,14 @@ namespace RNG_DungeonCrawler
                 case "down":
                     map.playerMove(0,1);
                     break;
+                case "attack":
+                    map.playerAttack();
+                    break;
+                case "refresh":
+                    map = new Objects.Dungeon(20, 20);
+                    break;
             }
-            refresh();
+            map.drawMap();
         }
     }
 }
