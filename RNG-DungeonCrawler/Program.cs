@@ -1,5 +1,4 @@
 ﻿using System;
-using RNG_DungeonCrawler.Objects.Individual.Specific;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,7 +27,7 @@ namespace RNG_DungeonCrawler
 
         public static void inputCommand()
         {
-            Console.WriteLine("\n\nCommands:\nMovement: Left, Right, Up, Down\nCombat: Attack\nSystem: Refresh");
+            Console.WriteLine("\nMovement: Left, Right, Up, Down\nCombat: Attack\nSystem: Refresh");
 
             switch (Console.ReadLine().ToLower())
             {

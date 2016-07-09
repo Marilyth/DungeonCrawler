@@ -16,8 +16,10 @@ namespace RNG_DungeonCrawler.Objects
 
         internal Player user;
         private Enemy curMob;
+        private Treasure curTre;
 
         internal List<Enemy> allEnemies;
+        internal List<Treasure> allTreasures;
 
         internal Field[,] mapset;
 
@@ -26,6 +28,7 @@ namespace RNG_DungeonCrawler.Objects
             mapset = new Field[lengthX, lengthY];
 
             allEnemies = new List<Enemy>();
+            allTreasures = new List<Treasure>();
             Array possibleStyle = Enum.GetValues(typeof(Field.Type));
             Array possibleMobs = Enum.GetValues(typeof(Enemy.Type));
 
@@ -35,9 +38,9 @@ namespace RNG_DungeonCrawler.Objects
                 {
                     int style = 0;
 
-                    if (ran.Next(0, mapset.Length/4) == 0) style = 2;
-                    else if (ran.Next(0, mapset.Length/8) == 0) { style = 3; allEnemies.Add(new Enemy(i, j, 1, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
-                    else if (ran.Next(0, mapset.Length / 4) == 0 && pCount==0) { style = 5; user = new Player(i, j, 1000); pCount++; }
+                    if (ran.Next(0, mapset.Length / 4) == 0) { style = 2; allTreasures.Add(new Treasure(null, null, 10, i, j)); }
+                    else if (ran.Next(0, mapset.Length / 8) == 0) { style = 3; allEnemies.Add(new Enemy(i, j, 1, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
+                    else if (ran.Next(0, mapset.Length / 4) == 0 && pCount == 0) { style = 5; user = new Player(i, j, 1000); pCount++; }
                     else if (ran.Next(0, mapset.Length / 100) == 0) style = 1;
                     else if (ran.Next(0, mapset.Length / 2) == 0) { style = 4; allEnemies.Add(new Enemy(i, j, 2, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
 
@@ -62,14 +65,16 @@ namespace RNG_DungeonCrawler.Objects
 
         internal void playerMove(int x, int y)
         {
-            if(user.axisX + x >= 0 && user.axisX + x < mapset.GetLength(0) && user.axisY + y < mapset.GetLength(1) && user.axisY + y >= 0)
+            Field movedTo = mapset[user.axisX + x, user.axisY + y], currentAt = mapset[user.axisX, user.axisY];
+
+            if (user.axisX + x >= 0 && user.axisX + x < mapset.GetLength(0) && user.axisY + y < mapset.GetLength(1) && user.axisY + y >= 0)
             {
-                if(mapset[user.axisX +x, user.axisY +y].fieldType == Field.Type.Ground)
+                if(movedTo.fieldType == Field.Type.Ground)
                 {
-                    mapset[user.axisX, user.axisY].fieldType = Field.Type.Ground;
+                    currentAt.fieldType = Field.Type.Ground;
                     user.axisX += x;
                     user.axisY += y;
-                    mapset[user.axisX, user.axisY].fieldType = Field.Type.Player;
+                    movedTo.fieldType = Field.Type.Player;
 
                     foreach (Enemy mob in allEnemies)
                     {
@@ -79,10 +84,16 @@ namespace RNG_DungeonCrawler.Objects
                     }
                 }
 
-                else if(mapset[user.axisX + x, user.axisY + y].fieldType == Field.Type.Enemy || mapset[user.axisX + x, user.axisY + y].fieldType == Field.Type.Boss)
+                else if(movedTo.fieldType == Field.Type.Enemy || movedTo.fieldType == Field.Type.Boss)
                 {
                     situation = 1;
                     curMob = allEnemies.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
+                }
+
+                else if (movedTo.fieldType == Field.Type.Treasure)
+                {
+                    situation = 2;
+                    curTre = allTreasures.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
                 }
             }
         }
@@ -117,7 +128,6 @@ namespace RNG_DungeonCrawler.Objects
             {
                 for (int i = 0; i < mapset.GetLength(1); i++)
                 {
-                    Console.Write("\n");
                     for (int j = 0; j < mapset.GetLength(0); j++)
                     {
                         switch (mapset[j, i].fieldType)
@@ -143,6 +153,7 @@ namespace RNG_DungeonCrawler.Objects
                         }
                         Console.Write($"{mapset[j, i].comfyView()}");
                     }
+                    Console.Write("\n");
                 }
             }
 
@@ -152,6 +163,16 @@ namespace RNG_DungeonCrawler.Objects
                 Console.WriteLine(curMob.enemyArt);
                 Console.WriteLine($"\n{curMob.enemyType}: {curMob.stats()}");
             }
+            else if (situation == 2)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"{Ascii.art("treasure")}\n");
+                Console.WriteLine(string.Join(", ", curTre.aDrop.ToList().ConvertAll(x => x.getStats())));
+                Console.WriteLine(string.Join(", ", curTre.wDrop.ToList().ConvertAll(x => x.getStats())));
+                Console.WriteLine($"{curTre.gold} gold");
+                situation = 0;
+            }
+
 
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("\n------------------------------------------------------------" +
@@ -171,6 +192,8 @@ namespace RNG_DungeonCrawler.Objects
                     situation = 0;
 
                     mapset[curMob.axisX, curMob.axisY].fieldType = Field.Type.Treasure;
+                    allTreasures.Add(new Treasure(curMob.wDropList.ToArray(), curMob.aDropList.ToArray(), curMob.HP, curMob.axisX, curMob.axisY));
+
                     allEnemies.Remove(curMob);
 
                     curMob = null;

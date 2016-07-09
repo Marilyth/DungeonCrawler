@@ -47,9 +47,10 @@
     <Compile Include="Objects\Dungeon.cs" />
     <Compile Include="Objects\Individual\Enemy.cs" />
     <Compile Include="Objects\Individual\Field.cs" />
-    <Compile Include="Objects\Individual\Specific\Armor.cs" />
-    <Compile Include="Objects\Individual\Specific\Ascii.cs" />
-    <Compile Include="Objects\Individual\Specific\Weapon.cs" />
+    <Compile Include="Objects\Individual\Armor.cs" />
+    <Compile Include="Objects\Individual\Ascii.cs" />
+    <Compile Include="Objects\Individual\Treasure.cs" />
+    <Compile Include="Objects\Individual\Weapon.cs" />
     <Compile Include="Objects\Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
