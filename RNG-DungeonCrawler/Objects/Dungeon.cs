@@ -130,28 +130,7 @@ namespace RNG_DungeonCrawler.Objects
                 {
                     for (int j = 0; j < mapset.GetLength(0); j++)
                     {
-                        switch (mapset[j, i].fieldType)
-                        {
-                            case Field.Type.Wall:
-                                Console.ForegroundColor = ConsoleColor.Gray;
-                                break;
-                            case Field.Type.Ground:
-                                Console.ForegroundColor = ConsoleColor.Black;
-                                break;
-                            case Field.Type.Treasure:
-                                Console.ForegroundColor = ConsoleColor.Yellow;
-                                break;
-                            case Field.Type.Player:
-                                Console.ForegroundColor = ConsoleColor.Blue;
-                                break;
-                            case Field.Type.Enemy:
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                break;
-                            case Field.Type.Boss:
-                                Console.ForegroundColor = ConsoleColor.Magenta;
-                                break;
-                        }
-                        Console.Write($"{mapset[j, i].comfyView()}");
+                        WriteColored(mapset[j, i].getColor() ,$"{mapset[j, i].comfyView()}");
                     }
                     Console.Write("\n");
                 }
@@ -159,22 +138,24 @@ namespace RNG_DungeonCrawler.Objects
 
             else if(situation == 1)
             {
-                Console.ForegroundColor = curMob.spectrum;
-                Console.WriteLine(curMob.enemyArt);
-                Console.WriteLine($"\n{curMob.enemyType}: {curMob.stats()}");
+                WriteColored(curMob.spectrum, curMob.enemyArt + $"\n\n{ curMob.enemyType}: { curMob.stats()}");
             }
             else if (situation == 2)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"{Ascii.art("treasure")}\n");
-                Console.WriteLine(string.Join(", ", curTre.aDrop.ToList().ConvertAll(x => x.getStats())));
-                Console.WriteLine(string.Join(", ", curTre.wDrop.ToList().ConvertAll(x => x.getStats())));
-                Console.WriteLine($"{curTre.gold} gold");
+                string output = $"{Enemy.art("treasure")}\n";
+                try
+                {
+                    output += string.Join(", ", curTre.aDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
+                    output += string.Join(", ", curTre.wDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
+                }
+                catch { }
+                output += $"{curTre.gold} gold";
+
+                WriteColored(ConsoleColor.Yellow, output);
+
                 situation = 0;
             }
 
-
-            Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("\n------------------------------------------------------------" +
                     $"\nPosition: {user.axisX}X {user.axisY}Y\n");
 
@@ -202,5 +183,7 @@ namespace RNG_DungeonCrawler.Objects
                 }
             }
         }
+
+        Action<ConsoleColor, string> WriteColored = (x, y) => { Console.ForegroundColor = x; Console.Write(y); Console.ForegroundColor = ConsoleColor.Gray; };
     }
 }

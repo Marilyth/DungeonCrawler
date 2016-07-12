@@ -41,5 +41,25 @@ namespace RNG_DungeonCrawler.Objects.Individual
                     return "";
             }
         }
+
+        internal ConsoleColor getColor()
+        {
+            switch (fieldType)
+            {
+                case Type.Ground:
+                    return ConsoleColor.Black;
+                case Type.Wall:
+                    return ConsoleColor.Gray;
+                case Type.Treasure:
+                    return ConsoleColor.Yellow;
+                case Type.Enemy:
+                    return ConsoleColor.Red;
+                case Type.Boss:
+                    return ConsoleColor.Magenta;
+                case Type.Player:
+                    return ConsoleColor.Blue;
+            }
+            return ConsoleColor.Gray;
+        }
     }
 }

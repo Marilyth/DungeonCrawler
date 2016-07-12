@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -60,7 +61,7 @@ namespace RNG_DungeonCrawler.Objects.Individual
             }
             curHP = HP;
             if (difficulty > 1) spectrum = ConsoleColor.Magenta;
-            enemyArt = Ascii.art(enemy.ToString());
+            enemyArt = art(enemy.ToString());
             enemyType = enemy;
         }
 
@@ -68,6 +69,13 @@ namespace RNG_DungeonCrawler.Objects.Individual
         {
             return $"HP: {curHP}/{HP}" +
                    $" Dmg: {dmg}";
+        }
+
+        public static string art(string enemyType)
+        {
+            StreamReader sr = new StreamReader($"ascii//{enemyType}.txt");
+            string art = sr.ReadToEnd();
+            return art;
         }
     }
 }

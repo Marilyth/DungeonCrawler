@@ -22,8 +22,7 @@ namespace RNG_DungeonCrawler.Objects
             calcStats();
         }
 
-        internal delegate double del(int i);
-        internal static del levelCalc = x => ((x * x * x) - 6 * (x * x) + 17 * (x) - 12) * (50 / 3.0);
+        internal static Func<int, double> levelCalc = x => ((x * x * x) - 6 * (x * x) + 17 * (x) - 12) * (50 / 3.0);
 
         private void calcStats()
         {
