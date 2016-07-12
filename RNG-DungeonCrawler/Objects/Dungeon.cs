@@ -130,7 +130,7 @@ namespace RNG_DungeonCrawler.Objects
                 {
                     for (int j = 0; j < mapset.GetLength(0); j++)
                     {
-                        WriteColored(mapset[j, i].getColor() ,$"{mapset[j, i].comfyView()}");
+                        WriteColored(mapset[j, i].getColor(), $"{mapset[j, i].comfyView()}");
                     }
                     Console.Write("\n");
                 }
