@@ -40,7 +40,7 @@ namespace RNG_DungeonCrawler.Objects
 
                     if (ran.Next(0, mapset.Length / 4) == 0) { style = 2; allTreasures.Add(new Treasure(null, null, 10, i, j)); }
                     else if (ran.Next(0, mapset.Length / 8) == 0) { style = 3; allEnemies.Add(new Enemy(i, j, 1, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
-                    else if (ran.Next(0, mapset.Length / 4) == 0 && pCount == 0) { style = 5; user = new Player(i, j, 1000); pCount++; }
+                    else if (ran.Next(0, mapset.Length / 4) == 0 && pCount == 0) { style = 5; user = new Player(i, j); pCount++; }
                     else if (ran.Next(0, mapset.Length / 100) == 0) style = 1;
                     else if (ran.Next(0, mapset.Length / 2) == 0) { style = 4; allEnemies.Add(new Enemy(i, j, 2, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
 
@@ -65,37 +65,41 @@ namespace RNG_DungeonCrawler.Objects
 
         internal void playerMove(int x, int y)
         {
-            Field movedTo = mapset[user.axisX + x, user.axisY + y], currentAt = mapset[user.axisX, user.axisY];
-
-            if (user.axisX + x >= 0 && user.axisX + x < mapset.GetLength(0) && user.axisY + y < mapset.GetLength(1) && user.axisY + y >= 0)
+            try
             {
-                if(movedTo.fieldType == Field.Type.Ground)
-                {
-                    currentAt.fieldType = Field.Type.Ground;
-                    user.axisX += x;
-                    user.axisY += y;
-                    movedTo.fieldType = Field.Type.Player;
+                Field movedTo = mapset[user.axisX + x, user.axisY + y], currentAt = mapset[user.axisX, user.axisY];
 
-                    foreach (Enemy mob in allEnemies)
+                if (user.axisX + x >= 0 && user.axisX + x < mapset.GetLength(0) && user.axisY + y < mapset.GetLength(1) && user.axisY + y >= 0)
+                {
+                    if (movedTo.fieldType == Field.Type.Ground)
                     {
-                        int xAx = ran.Next(-1, 2);
-                        int yAx = ran.Next(-1, 2);
-                        enemyMove(xAx, yAx, mob);
+                        currentAt.fieldType = Field.Type.Ground;
+                        user.axisX += x;
+                        user.axisY += y;
+                        movedTo.fieldType = Field.Type.Player;
+
+                        foreach (Enemy mob in allEnemies)
+                        {
+                            int xAx = ran.Next(-1, 2);
+                            int yAx = ran.Next(-1, 2);
+                            enemyMove(xAx, yAx, mob);
+                        }
+                    }
+
+                    else if (movedTo.fieldType == Field.Type.Enemy || movedTo.fieldType == Field.Type.Boss)
+                    {
+                        situation = 1;
+                        curMob = allEnemies.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
+                    }
+
+                    else if (movedTo.fieldType == Field.Type.Treasure)
+                    {
+                        situation = 2;
+                        curTre = allTreasures.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
                     }
                 }
-
-                else if(movedTo.fieldType == Field.Type.Enemy || movedTo.fieldType == Field.Type.Boss)
-                {
-                    situation = 1;
-                    curMob = allEnemies.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
-                }
-
-                else if (movedTo.fieldType == Field.Type.Treasure)
-                {
-                    situation = 2;
-                    curTre = allTreasures.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
-                }
             }
+            catch (Exception) { }
         }
 
         private void enemyMove(int x, int y, Enemy mob)
@@ -130,7 +134,7 @@ namespace RNG_DungeonCrawler.Objects
                 {
                     for (int j = 0; j < mapset.GetLength(0); j++)
                     {
-                        WriteColored(mapset[j, i].getColor(), $"{mapset[j, i].comfyView()}");
+                        WriteColored(mapset[j, i].getColor() ,$"{mapset[j, i].comfyView()}");
                     }
                     Console.Write("\n");
                 }
@@ -156,7 +160,7 @@ namespace RNG_DungeonCrawler.Objects
                 situation = 0;
             }
 
-            Console.WriteLine("\n------------------------------------------------------------" +
+            Console.WriteLine("------------------------------------------------------------" +
                     $"\nPosition: {user.axisX}X {user.axisY}Y\n");
 
             Console.WriteLine($"{playerSight()}\n\n" + user.getStats());
@@ -167,6 +171,7 @@ namespace RNG_DungeonCrawler.Objects
             if(situation == 1)
             {
                 curMob.curHP -= ran.Next(user.dmg/2, user.dmg);
+                user.curHp -= ran.Next(curMob.dmg / 2, curMob.dmg);
 
                 if (curMob.curHP <= 0)
                 {
@@ -176,6 +181,9 @@ namespace RNG_DungeonCrawler.Objects
                     allTreasures.Add(new Treasure(curMob.wDropList.ToArray(), curMob.aDropList.ToArray(), curMob.HP, curMob.axisX, curMob.axisY));
 
                     allEnemies.Remove(curMob);
+                    user.exp += curMob.exp;
+
+                    user.writeStats();
 
                     curMob = null;
 

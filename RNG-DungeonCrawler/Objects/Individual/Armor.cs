@@ -22,6 +22,5 @@ namespace RNG_DungeonCrawler.Objects.Individual
         {
             return $"{name}: {def}def";
         }
-
     }
 }

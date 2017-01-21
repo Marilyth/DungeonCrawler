@@ -36,26 +36,26 @@ namespace RNG_DungeonCrawler.Objects.Individual
                 case Type.Rat:
                     HP = 10 * difficulty;
                     dmg = 2 * difficulty;
-                    exp = 10 * difficulty;
+                    exp = 25 * difficulty;
                     wDropList.Add(new Weapon("Teeth", 5, 10));
                     break;
                 case Type.Snake:
                     HP = 20 * difficulty;
                     dmg = 3 * difficulty;
-                    exp = 20 * difficulty;
+                    exp = 50 * difficulty;
                     wDropList.Add(new Weapon("Venom-Dagger", 5, 10));
                     break;
                 case Type.Bat:
                     HP = 10 * difficulty;
                     dmg = 5 * difficulty;
-                    exp = 20 * difficulty;
+                    exp = 50 * difficulty;
                     wDropList.Add(new Weapon("Echo", 5, 10));
                     aDropList.Add(new Armor("Batwing-Dress", 1, 3));
                     break;
                 case Type.Ghost:
                     HP = 30 * difficulty;
                     dmg = 4 * difficulty;
-                    exp = 40 * difficulty;
+                    exp = 100 * difficulty;
                     wDropList.Add(new Weapon("Arcane Dust", 5, 10));
                     break;
             }
@@ -73,7 +73,7 @@ namespace RNG_DungeonCrawler.Objects.Individual
 
         public static string art(string enemyType)
         {
-            StreamReader sr = new StreamReader($"ascii//{enemyType}.txt");
+            StreamReader sr = new StreamReader($"data//ascii//{enemyType}.txt");
             string art = sr.ReadToEnd();
             return art;
         }

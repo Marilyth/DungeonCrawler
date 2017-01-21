@@ -1,0 +1,2 @@
+0:Wooden Club:4:3
+1:Leather Armor:4:3

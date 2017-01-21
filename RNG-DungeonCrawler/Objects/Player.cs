@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,17 +13,29 @@ namespace RNG_DungeonCrawler.Objects
         internal int axisY { get; set; }
 
         internal int hp, curHp, dmg, exp, level;
+        private int wID, aID;
+        public Individual.Weapon weaponHold;
+        public Individual.Armor armorHold;
 
-        public Player(int x, int y, int experience)
+
+        public Player(int x, int y)
         {
             axisX = x;
             axisY = y;
 
-            exp = experience;
+            StreamReader sr = new StreamReader($"data//playerStats.txt");
+            string[] data = sr.ReadLine().Split(':');
+            exp = int.Parse(data[0]);
+            wID = int.Parse(data[1]);
+            aID = int.Parse(data[2]);
+
+            sr.Close();
+
             calcStats();
         }
 
-        internal static Func<int, double> levelCalc = x => ((x * x * x) - 6 * (x * x) + 17 * (x) - 12) * (50 / 3.0);
+        internal delegate double del(int i);
+        internal static del levelCalc = x => (50 * (x * x));
 
         private void calcStats()
         {
@@ -33,9 +46,22 @@ namespace RNG_DungeonCrawler.Objects
             }
             level = i - 1;
 
-            hp = level * level + 3;
+            StreamReader sr = new StreamReader("data//itemBase.txt");
+            string s = null;
+            while ((s = sr.ReadLine()) != null)
+            {
+                string[] information = s.Split(':');
+
+                if (information[0].Equals(wID.ToString()))
+                    weaponHold = new Individual.Weapon(information[1], int.Parse(information[2]), int.Parse(information[3]));
+                else if (information[0].Equals(aID.ToString()))
+                    armorHold = new Individual.Armor(information[1], int.Parse(information[2]), int.Parse(information[3]));
+            }
+            sr.Close();
+
+            hp = level * level + 30 + armorHold.def;
             curHp = hp;
-            dmg = level * 2;
+            dmg = level + 2 + weaponHold.dmg;
         }
 
         internal string calcNextLevel()
@@ -43,7 +69,7 @@ namespace RNG_DungeonCrawler.Objects
             double expCurrentHold = exp - levelCalc(level);
             string output = "", TempOutput = "";
             double diffExperience = levelCalc(level + 1) - levelCalc(level);
-            for (int i = 0; i < (expCurrentHold / (diffExperience / 10)); i++)
+            for (int i = 0; i < Math.Floor(expCurrentHold / (diffExperience / 10)); i++)
             {
                 output += "■";
             }
@@ -56,9 +82,18 @@ namespace RNG_DungeonCrawler.Objects
 
         public string getStats()
         {
-            return $"HP: {curHp}/{hp}"+
-                   $" Dmg: {dmg}"+
-                   $" Level: {level}  ({calcNextLevel()})";
+            return $"HP: {curHp}/{hp} ({armorHold.name} -> +{armorHold.def})\n" +
+                   $"Dmg: {dmg} ({weaponHold.name} -> +{weaponHold.dmg})\n"+
+                   $"Level: {level}  ({calcNextLevel()})";
+        }
+
+        public void writeStats()
+        {
+            StreamWriter sw = new StreamWriter("data//playerStats.txt");
+            sw.WriteLine($"{exp}:{wID}:{aID}");
+            sw.Close();
+
+            calcStats();
         }
     }
 }
