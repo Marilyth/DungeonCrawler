@@ -12,7 +12,7 @@ namespace RNG_DungeonCrawler.Objects
         internal int axisX { get; set; }
         internal int axisY { get; set; }
 
-        internal int hp, curHp, dmg, exp, level;
+        internal int hp, curHp, dmg, exp, level, gold;
         private int wID, aID;
         public Individual.Weapon weaponHold;
         public Individual.Armor armorHold;
@@ -28,6 +28,7 @@ namespace RNG_DungeonCrawler.Objects
             exp = int.Parse(data[0]);
             wID = int.Parse(data[1]);
             aID = int.Parse(data[2]);
+            gold = int.Parse(data[3]);
 
             sr.Close();
 
@@ -90,7 +91,7 @@ namespace RNG_DungeonCrawler.Objects
         public void writeStats()
         {
             StreamWriter sw = new StreamWriter("data//playerStats.txt");
-            sw.WriteLine($"{exp}:{wID}:{aID}");
+            sw.WriteLine($"{exp}:{wID}:{aID}:{gold}");
             sw.Close();
 
             calcStats();

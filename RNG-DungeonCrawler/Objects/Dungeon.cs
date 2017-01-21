@@ -12,7 +12,7 @@ namespace RNG_DungeonCrawler.Objects
         private Random ran = new Random();
         int pCount;
 
-        private int situation = 0;
+        public Situation playerAction;
 
         internal Player user;
         private Enemy curMob;
@@ -26,6 +26,7 @@ namespace RNG_DungeonCrawler.Objects
         public Dungeon(int lengthX, int lengthY)
         {
             mapset = new Field[lengthX, lengthY];
+            playerAction = Situation.Walk;
 
             allEnemies = new List<Enemy>();
             allTreasures = new List<Treasure>();
@@ -88,13 +89,13 @@ namespace RNG_DungeonCrawler.Objects
 
                     else if (movedTo.fieldType == Field.Type.Enemy || movedTo.fieldType == Field.Type.Boss)
                     {
-                        situation = 1;
+                        playerAction = Situation.Fight;
                         curMob = allEnemies.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
                     }
 
                     else if (movedTo.fieldType == Field.Type.Treasure)
                     {
-                        situation = 2;
+                        playerAction = Situation.Loot;
                         curTre = allTreasures.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
                     }
                 }
@@ -119,7 +120,7 @@ namespace RNG_DungeonCrawler.Objects
                 else if (mapset[mob.axisX + x, mob.axisY + y].fieldType == Field.Type.Player)
                 {
                     curMob = mob;
-                    situation = 1;
+                    playerAction = Situation.Fight;
                 }
             }
         }
@@ -128,36 +129,42 @@ namespace RNG_DungeonCrawler.Objects
         {
             Console.Clear();
 
-            if (situation == 0)
+            switch (playerAction)
             {
-                for (int i = 0; i < mapset.GetLength(1); i++)
-                {
-                    for (int j = 0; j < mapset.GetLength(0); j++)
+                case Situation.Walk:
+                    for (int i = 0; i < mapset.GetLength(1); i++)
                     {
-                        WriteColored(mapset[j, i].getColor() ,$"{mapset[j, i].comfyView()}");
+                        for (int j = 0; j < mapset.GetLength(0); j++)
+                        {
+                            WriteColored(mapset[j, i].getColor(), $"{mapset[j, i].comfyView()}");
+                        }
+                        Console.Write("\n");
                     }
-                    Console.Write("\n");
-                }
-            }
+                    break;
 
-            else if(situation == 1)
-            {
-                WriteColored(curMob.spectrum, curMob.enemyArt + $"\n\n{ curMob.enemyType}: { curMob.stats()}");
-            }
-            else if (situation == 2)
-            {
-                string output = $"{Enemy.art("treasure")}\n";
-                try
-                {
-                    output += string.Join(", ", curTre.aDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
-                    output += string.Join(", ", curTre.wDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
-                }
-                catch { }
-                output += $"{curTre.gold} gold";
+                case Situation.Fight:
+                    WriteColored(curMob.spectrum, curMob.enemyArt + $"\n\n{ curMob.enemyType}: { curMob.stats()}");
+                    break;
 
-                WriteColored(ConsoleColor.Yellow, output);
+                case Situation.Loot:
+                    string output = $"{Enemy.art("treasure")}\n";
+                    try
+                    {
+                        output += string.Join(", ", curTre.aDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
+                        output += string.Join(", ", curTre.wDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
+                    }
+                    catch { }
+                    output += $"{curTre.gold} gold\n";
 
-                situation = 0;
+                    WriteColored(ConsoleColor.Yellow, output);
+                    break;
+
+                case Situation.Dead:
+                    break;
+
+                case Situation.Done:
+                    WriteColored(ConsoleColor.Green, "You are done! --- R to refresh\n");
+                    break;
             }
 
             Console.WriteLine("------------------------------------------------------------" +
@@ -166,16 +173,25 @@ namespace RNG_DungeonCrawler.Objects
             Console.WriteLine($"{playerSight()}\n\n" + user.getStats());
         }
 
+        public void pickUp()
+        {
+            user.gold += curTre.gold;
+            user.writeStats();
+            mapset[curTre.axisX, curTre.axisY].fieldType = Field.Type.Ground;
+            allTreasures.Remove(curTre);
+            playerAction = Situation.Walk;
+        }
+
         public void playerAttack()
         {
-            if(situation == 1)
+            if(playerAction == Situation.Fight)
             {
                 curMob.curHP -= ran.Next(user.dmg/2, user.dmg);
                 user.curHp -= ran.Next(curMob.dmg / 2, curMob.dmg);
 
                 if (curMob.curHP <= 0)
                 {
-                    situation = 0;
+                    playerAction = Situation.Walk;
 
                     mapset[curMob.axisX, curMob.axisY].fieldType = Field.Type.Treasure;
                     allTreasures.Add(new Treasure(curMob.wDropList.ToArray(), curMob.aDropList.ToArray(), curMob.HP, curMob.axisX, curMob.axisY));
@@ -187,9 +203,23 @@ namespace RNG_DungeonCrawler.Objects
 
                     curMob = null;
 
+                    if(allEnemies.Count == 0)
+                    {
+                        playerAction = Situation.Done;
+                    }
+
                     drawMap();
                 }
             }
+        }
+
+        public enum Situation
+        {
+            Fight,
+            Loot,
+            Walk,
+            Dead,
+            Done
         }
 
         Action<ConsoleColor, string> WriteColored = (x, y) => { Console.ForegroundColor = x; Console.Write(y); Console.ForegroundColor = ConsoleColor.Gray; };

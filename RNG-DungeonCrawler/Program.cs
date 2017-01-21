@@ -36,29 +36,33 @@ namespace RNG_DungeonCrawler
             do
             {
                 cki = Console.ReadKey();
-                
-                    switch (cki.Key)
-                    {
-                        case ConsoleKey.UpArrow:
-                            map.playerMove(0, -1);
-                            break;
-                        case ConsoleKey.DownArrow:
-                            map.playerMove(0, 1);
-                            break;
-                        case ConsoleKey.RightArrow:
-                            map.playerMove(1, 0);
-                            break;
-                        case ConsoleKey.LeftArrow:
-                            map.playerMove(-1, 0);
-                            break;
-                        case ConsoleKey.R:
-                            map = new Objects.Dungeon(20, 20);
-                            break;
-                        default:
-                            map.playerAttack();
-                            break;
-                    }
-            map.drawMap();
+
+                switch (cki.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        map.playerMove(0, -1);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        map.playerMove(0, 1);
+                        break;
+                    case ConsoleKey.RightArrow:
+                        map.playerMove(1, 0);
+                        break;
+                    case ConsoleKey.LeftArrow:
+                        map.playerMove(-1, 0);
+                        break;
+                    case ConsoleKey.R:
+                        map = new Objects.Dungeon(20, 20);
+                        break;
+                    case ConsoleKey.Enter:
+                        if (map.playerAction == Objects.Dungeon.Situation.Loot)
+                            map.pickUp();
+                        break;
+                    default:
+                        map.playerAttack();
+                        break;
+                }
+                map.drawMap();
 
             } while (cki.Key != ConsoleKey.Escape);
         }
