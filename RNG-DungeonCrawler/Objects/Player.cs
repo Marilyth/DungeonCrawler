@@ -47,7 +47,7 @@ namespace RNG_DungeonCrawler.Objects
             level = i - 1;
 
             hp = (level + 1) * 3 + 10 + armorHold.def;
-            dmg = level + 1 + weaponHold.dmg;
+            dmg = level + 3 + weaponHold.dmg;
         }
 
         internal string calcNextLevel()

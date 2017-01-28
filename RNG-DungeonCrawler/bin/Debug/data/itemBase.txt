@@ -10,3 +10,6 @@ Batwing-Dress:10
 Arcane Dust:4
 Rusty Sword:47
 Moldy Shield:80
+Fireball:70
+Bats:190
+Vampire Curse:290

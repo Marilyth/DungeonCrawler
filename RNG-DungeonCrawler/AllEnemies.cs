@@ -18,30 +18,34 @@ namespace RNG_DungeonCrawler
             enemyLevel.Add("Snake", 3);
             enemyLevel.Add("Bat", 5);
             enemyLevel.Add("Ghost", 12);
-            bossLevel.Add("Skeleton", 15);
+            bossLevel.Add("Skeleton", 20);
+            enemyLevel.Add("Phoenix", 30);
+            bossLevel.Add("Vampire", 27);
             bossLevel.Add("Spider", 6);
+            bossLevel.Add("Dragon", 40);
 
             enemyLevel.OrderBy(x => x.Value);
+            bossLevel.OrderBy(x => x.Value);
         }
 
         public List<string> getEligable(int level)
         {
-            return enemyLevel.Where(x => x.Value <= level).ToDictionary(x => x.Key, x => x.Value).Keys.ToList();
+            return enemyLevel.Where(x => x.Value <= level && x.Value >= level - 10).ToDictionary(x => x.Key, x => x.Value).Keys.ToList();
         }
         public List<string> getEligableBoss(int level)
         {
-            return bossLevel.Where(x => x.Value <= level).ToDictionary(x => x.Key, x => x.Value).Keys.ToList();
+            return bossLevel.Where(x => x.Value <= level && x.Value >= level - 10).ToDictionary(x => x.Key, x => x.Value).Keys.ToList();
         }
 
         public string getEnemy(int level)
         {
             List<string> enemies = getEligable(level);
-            return enemies[ran.Next(ran.Next(0, enemies.Count), enemies.Count)];
+            return enemies[ran.Next(0, enemies.Count)];
         }
         public string getBoss(int level)
         {
             List<string> bosses = getEligableBoss(level);
-            return bosses[ran.Next(ran.Next(0, bosses.Count), bosses.Count)];
+            return bosses[ran.Next(0, bosses.Count)];
         }
     }
 }

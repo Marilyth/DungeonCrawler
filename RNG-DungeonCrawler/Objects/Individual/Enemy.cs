@@ -66,12 +66,32 @@ namespace RNG_DungeonCrawler.Objects.Individual
                     HP = 500;
                     dmg = 20;
                     exp = 1800;
+                    wDropList.Add(Weapon.getWeapon("Rusty Sword", 40));
+                    aDropList.Add(Armor.getArmor("Moldy Shield", 20));
+                    break;
+                case "Phoenix":
+                    HP = 200;
+                    dmg = 60;
+                    exp = 3500;
+                    wDropList.Add(Weapon.getWeapon("Fireball", 19));
+                    break;
+                case "Vampire":
+                    HP = 2000;
+                    dmg = 100;
+                    exp = 13500;
+                    wDropList.Add(Weapon.getWeapon("Bats", 19));
+                    aDropList.Add(Armor.getArmor("Vampire Curse", 20));
+                    break;
+                case "Dragon":
+                    HP = 50000;
+                    dmg = 200;
+                    exp = 180000;
                     wDropList.Add(Weapon.getWeapon("Rusty Sword", 19));
                     aDropList.Add(Armor.getArmor("Moldy Shield", 20));
                     break;
             }
             curHP = HP;
-            if (boss) spectrum = ConsoleColor.Magenta;
+            if (boss) spectrum = ConsoleColor.DarkMagenta;
             enemyArt = art(enemy);
         }
 

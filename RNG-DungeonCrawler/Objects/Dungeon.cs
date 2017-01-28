@@ -70,7 +70,7 @@ namespace RNG_DungeonCrawler.Objects
                     else if (decision < 397)
                     {
                         type = Field.Type.Treasure;
-                        allTreasures.Add(new Treasure(null, null, ran.Next(1, difficulty*2), x, y));
+                        allTreasures.Add(new Treasure(null, null, ran.Next(1, difficulty*4 + 1), x, y));
                     }
                     else
                     {
@@ -127,7 +127,10 @@ namespace RNG_DungeonCrawler.Objects
                         }
                     }
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                    Program.menuCommand();
+                }
             }
         }
 
