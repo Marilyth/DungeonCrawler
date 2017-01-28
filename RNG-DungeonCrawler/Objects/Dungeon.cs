@@ -10,97 +10,125 @@ namespace RNG_DungeonCrawler.Objects
     class Dungeon
     {
         private Random ran = new Random();
-        int pCount;
 
         public Situation playerAction;
 
-        internal Player user;
+        internal static Player user;
         private Enemy curMob;
         private Treasure curTre;
 
         internal List<Enemy> allEnemies;
         internal List<Treasure> allTreasures;
+        private AllEnemies information;
 
         internal Field[,] mapset;
 
-        public Dungeon(int lengthX, int lengthY)
+        public Dungeon(int lengthX, int lengthY, int difficulty)
         {
+            Boolean playerExist = false;
+            Boolean bossExist = false;
+
+            information = new AllEnemies();
+
+            user = new Player(0, 0);
+
             mapset = new Field[lengthX, lengthY];
             playerAction = Situation.Walk;
 
             allEnemies = new List<Enemy>();
             allTreasures = new List<Treasure>();
-            Array possibleStyle = Enum.GetValues(typeof(Field.Type));
-            Array possibleMobs = Enum.GetValues(typeof(Enemy.Type));
 
-            for (int i = 0; i < mapset.GetLength(0); i++)
+            for (int x = 0; x < mapset.GetLength(0); x++)
             {
-                for (int j = 0; j < mapset.GetLength(1); j++)
+                for (int y = 0; y < mapset.GetLength(1); y++)
                 {
-                    int style = 0;
+                    Field.Type type = Field.Type.Ground;
+                    int decision = ran.Next(0, 400);
 
-                    if (ran.Next(0, mapset.Length / 4) == 0) { style = 2; allTreasures.Add(new Treasure(null, null, 10, i, j)); }
-                    else if (ran.Next(0, mapset.Length / 8) == 0) { style = 3; allEnemies.Add(new Enemy(i, j, 1, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
-                    else if (ran.Next(0, mapset.Length / 4) == 0 && pCount == 0) { style = 5; user = new Player(i, j); pCount++; }
-                    else if (ran.Next(0, mapset.Length / 100) == 0) style = 1;
-                    else if (ran.Next(0, mapset.Length / 2) == 0) { style = 4; allEnemies.Add(new Enemy(i, j, 2, (Enemy.Type)possibleMobs.GetValue(ran.Next(0, possibleMobs.Length)))); }
+                    if (decision < 100)
+                    {
+                        type = Field.Type.Wall;
+                    }
+                    else if (decision < 380)
+                    {
+                        type = Field.Type.Ground;
+                    }
+                    else if (decision < 390)
+                    {
+                        type = Field.Type.Enemy;
+                        allEnemies.Add(new Enemy(x, y, false, information.getEnemy(difficulty)));
+                    }
+                    else if (decision < 395)
+                    {
+                        if (!bossExist)
+                        {
+                            type = Field.Type.Boss;
+                            allEnemies.Add(new Enemy(x, y, true, information.getBoss(difficulty)));
+                            bossExist = true;
+                        }
+                    }
+                    else if (decision < 397)
+                    {
+                        type = Field.Type.Treasure;
+                        allTreasures.Add(new Treasure(null, null, ran.Next(1, difficulty*2), x, y));
+                    }
+                    else
+                    {
+                        if (!playerExist)
+                        {
+                            type = Field.Type.Player;
+                            user = new Player(x, y);
+                            playerExist = true;
+                        }
+                    }
 
-                    mapset[i, j] = new Field(i,j, (Field.Type)possibleStyle.GetValue(style));
+                    mapset[x, y] = new Field(x, y, type);
                 }
             }
+            user.curHp = user.hp;
             return;
-        }
-
-        internal string playerSight()
-        {
-
-            string output = "";
-
-            try { output += $"   {(mapset[user.axisX, user.axisY - 1].comfyView())}\n"; } catch (Exception) { output += "   [X]\n"; }
-            try { output += $"{(mapset[user.axisX - 1, user.axisY].comfyView())}"; } catch (Exception) { output += "[X]"; }
-            try { output += $"   {(mapset[user.axisX + 1, user.axisY].comfyView())}\n"; } catch (Exception) { output += "   [X]\n"; }
-            try { output += $"   {(mapset[user.axisX, user.axisY + 1].comfyView())}"; } catch (Exception) { output += "   [X]\n"; }
-
-            return output;
         }
 
         internal void playerMove(int x, int y)
         {
-            try
+            if(playerAction == Situation.Walk)
             {
-                Field movedTo = mapset[user.axisX + x, user.axisY + y], currentAt = mapset[user.axisX, user.axisY];
-
-                if (user.axisX + x >= 0 && user.axisX + x < mapset.GetLength(0) && user.axisY + y < mapset.GetLength(1) && user.axisY + y >= 0)
+                try
                 {
-                    if (movedTo.fieldType == Field.Type.Ground)
-                    {
-                        currentAt.fieldType = Field.Type.Ground;
-                        user.axisX += x;
-                        user.axisY += y;
-                        movedTo.fieldType = Field.Type.Player;
+                    Field movedTo = mapset[user.axisX + x, user.axisY + y], currentAt = mapset[user.axisX, user.axisY];
 
-                        foreach (Enemy mob in allEnemies)
+                    if (user.axisX + x >= 0 && user.axisX + x < mapset.GetLength(0) && user.axisY + y < mapset.GetLength(1) && user.axisY + y >= 0)
+                    {
+                        if (movedTo.fieldType == Field.Type.Ground)
                         {
-                            int xAx = ran.Next(-1, 2);
-                            int yAx = ran.Next(-1, 2);
-                            enemyMove(xAx, yAx, mob);
+                            currentAt.fieldType = Field.Type.Ground;
+                            user.axisX += x;
+                            user.axisY += y;
+                            movedTo.fieldType = Field.Type.Player;
+
+                            foreach (Enemy mob in allEnemies)
+                            {
+                                int xAx = ran.Next(-1, 2);
+                                int yAx = ran.Next(-1, 2);
+                                enemyMove(xAx, yAx, mob);
+                            }
+                        }
+
+                        else if (movedTo.fieldType == Field.Type.Enemy || movedTo.fieldType == Field.Type.Boss)
+                        {
+                            playerAction = Situation.Fight;
+                            curMob = allEnemies.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
+                        }
+
+                        else if (movedTo.fieldType == Field.Type.Treasure)
+                        {
+                            playerAction = Situation.Loot;
+                            curTre = allTreasures.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
                         }
                     }
-
-                    else if (movedTo.fieldType == Field.Type.Enemy || movedTo.fieldType == Field.Type.Boss)
-                    {
-                        playerAction = Situation.Fight;
-                        curMob = allEnemies.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
-                    }
-
-                    else if (movedTo.fieldType == Field.Type.Treasure)
-                    {
-                        playerAction = Situation.Loot;
-                        curTre = allTreasures.Find(n => n.axisX == user.axisX + x && n.axisY == user.axisY + y);
-                    }
                 }
+                catch (Exception) { }
             }
-            catch (Exception) { }
         }
 
         private void enemyMove(int x, int y, Enemy mob)
@@ -125,7 +153,7 @@ namespace RNG_DungeonCrawler.Objects
             }
         }
 
-        internal void drawMap()
+        internal void drawMap(Boolean slowLoad)
         {
             Console.Clear();
 
@@ -136,6 +164,7 @@ namespace RNG_DungeonCrawler.Objects
                     {
                         for (int j = 0; j < mapset.GetLength(0); j++)
                         {
+                            if (slowLoad) System.Threading.Thread.Sleep(3);
                             WriteColored(mapset[j, i].getColor(), $"{mapset[j, i].comfyView()}");
                         }
                         Console.Write("\n");
@@ -143,23 +172,24 @@ namespace RNG_DungeonCrawler.Objects
                     break;
 
                 case Situation.Fight:
-                    WriteColored(curMob.spectrum, curMob.enemyArt + $"\n\n{ curMob.enemyType}: { curMob.stats()}");
+                    WriteColored(curMob.spectrum, curMob.enemyArt + $"\n\n{ curMob.stats()}");
                     break;
 
                 case Situation.Loot:
                     string output = $"{Enemy.art("treasure")}\n";
-                    try
-                    {
-                        output += string.Join(", ", curTre.aDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
-                        output += string.Join(", ", curTre.wDrop.ToList().ConvertAll(x => x.getStats())) + "\n";
-                    }
-                    catch { }
+
+                    if(curTre.wDrop != null)
+                        output += string.Join(", ", curTre.wDrop.getStats()) + "\n";
+                    if(curTre.aDrop != null)
+                        output += string.Join(", ", curTre.aDrop.getStats()) + "\n";
+
                     output += $"{curTre.gold} gold\n";
 
                     WriteColored(ConsoleColor.Yellow, output);
                     break;
 
                 case Situation.Dead:
+                    WriteColored(ConsoleColor.Red, "You Died! --- R to refresh\n");
                     break;
 
                 case Situation.Done:
@@ -170,16 +200,30 @@ namespace RNG_DungeonCrawler.Objects
             Console.WriteLine("------------------------------------------------------------" +
                     $"\nPosition: {user.axisX}X {user.axisY}Y\n");
 
-            Console.WriteLine($"{playerSight()}\n\n" + user.getStats());
+            Console.WriteLine(user.getStats());
         }
 
         public void pickUp()
         {
             user.gold += curTre.gold;
+            if(curTre.aDrop != null && curTre.aDrop.def > user.armorHold.def)
+                user.armorHold = curTre.aDrop;
+            if (curTre.wDrop != null && curTre.wDrop.dmg > user.weaponHold.dmg)
+                user.weaponHold = curTre.wDrop;
+
             user.writeStats();
             mapset[curTre.axisX, curTre.axisY].fieldType = Field.Type.Ground;
             allTreasures.Remove(curTre);
             playerAction = Situation.Walk;
+        }
+
+        public void healUp()
+        {
+            if (user.gold >= 10)
+            {
+                user.gold -= 10;
+                user.curHp += 10;
+            }
         }
 
         public void playerAttack()
@@ -194,7 +238,7 @@ namespace RNG_DungeonCrawler.Objects
                     playerAction = Situation.Walk;
 
                     mapset[curMob.axisX, curMob.axisY].fieldType = Field.Type.Treasure;
-                    allTreasures.Add(new Treasure(curMob.wDropList.ToArray(), curMob.aDropList.ToArray(), curMob.HP, curMob.axisX, curMob.axisY));
+                    allTreasures.Add(curMob.uponDeath());
 
                     allEnemies.Remove(curMob);
                     user.exp += curMob.exp;
@@ -208,7 +252,17 @@ namespace RNG_DungeonCrawler.Objects
                         playerAction = Situation.Done;
                     }
 
-                    drawMap();
+                    drawMap(false);
+                }
+                else if(user.curHp <= 0)
+                {
+                    playerAction = Situation.Dead;
+                    user.weaponHold = Weapon.getWeapon("Nothing");
+                    user.armorHold = Armor.getArmor("Nothing");
+                    user.exp -= user.exp / 10;
+                    user.writeStats();
+
+                    drawMap(false);
                 }
             }
         }

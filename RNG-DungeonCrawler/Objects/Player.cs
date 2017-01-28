@@ -13,7 +13,6 @@ namespace RNG_DungeonCrawler.Objects
         internal int axisY { get; set; }
 
         internal int hp, curHp, dmg, exp, level, gold;
-        private int wID, aID;
         public Individual.Weapon weaponHold;
         public Individual.Armor armorHold;
 
@@ -26,8 +25,8 @@ namespace RNG_DungeonCrawler.Objects
             StreamReader sr = new StreamReader($"data//playerStats.txt");
             string[] data = sr.ReadLine().Split(':');
             exp = int.Parse(data[0]);
-            wID = int.Parse(data[1]);
-            aID = int.Parse(data[2]);
+            weaponHold = Individual.Weapon.getWeapon(data[1]);
+            armorHold = Individual.Armor.getArmor(data[2]);
             gold = int.Parse(data[3]);
 
             sr.Close();
@@ -47,22 +46,8 @@ namespace RNG_DungeonCrawler.Objects
             }
             level = i - 1;
 
-            StreamReader sr = new StreamReader("data//itemBase.txt");
-            string s = null;
-            while ((s = sr.ReadLine()) != null)
-            {
-                string[] information = s.Split(':');
-
-                if (information[0].Equals(wID.ToString()))
-                    weaponHold = new Individual.Weapon(information[1], int.Parse(information[2]), int.Parse(information[3]));
-                else if (information[0].Equals(aID.ToString()))
-                    armorHold = new Individual.Armor(information[1], int.Parse(information[2]), int.Parse(information[3]));
-            }
-            sr.Close();
-
-            hp = level * level + 30 + armorHold.def;
-            curHp = hp;
-            dmg = level + 2 + weaponHold.dmg;
+            hp = (level + 1) * 3 + 10 + armorHold.def;
+            dmg = level + 1 + weaponHold.dmg;
         }
 
         internal string calcNextLevel()
@@ -85,13 +70,14 @@ namespace RNG_DungeonCrawler.Objects
         {
             return $"HP: {curHp}/{hp} ({armorHold.name} -> +{armorHold.def})\n" +
                    $"Dmg: {dmg} ({weaponHold.name} -> +{weaponHold.dmg})\n"+
-                   $"Level: {level}  ({calcNextLevel()})";
+                   $"Level: {level}  ({calcNextLevel()})\n"+
+                   $"Gold: {gold}";
         }
 
         public void writeStats()
         {
             StreamWriter sw = new StreamWriter("data//playerStats.txt");
-            sw.WriteLine($"{exp}:{wID}:{aID}:{gold}");
+            sw.WriteLine($"{exp}:{weaponHold.name}:{armorHold.name}:{gold}");
             sw.Close();
 
             calcStats();

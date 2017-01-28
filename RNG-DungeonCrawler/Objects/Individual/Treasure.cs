@@ -11,11 +11,11 @@ namespace RNG_DungeonCrawler.Objects.Individual
         internal int axisX { get; set; }
         internal int axisY { get; set; }
 
-        public Weapon[] wDrop; 
-        public Armor[] aDrop;
+        public Weapon wDrop; 
+        public Armor aDrop;
         public int gold;
 
-        public Treasure(Weapon[] pWeapon, Armor[] pArmor, int g, int x, int y)
+        public Treasure(Weapon pWeapon, Armor pArmor, int g, int x, int y)
         {
             wDrop = pWeapon;
             aDrop = pArmor;
