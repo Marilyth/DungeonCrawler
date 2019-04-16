@@ -1,0 +1,58 @@
+{
+  "format": 1,
+  "restore": {
+    "E:\\Coding\\DungeonCrawler\\DungeonCrawler.csproj": {}
+  },
+  "projects": {
+    "E:\\Coding\\DungeonCrawler\\DungeonCrawler.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "E:\\Coding\\DungeonCrawler\\DungeonCrawler.csproj",
+        "projectName": "DungeonCrawler",
+        "projectPath": "E:\\Coding\\DungeonCrawler\\DungeonCrawler.csproj",
+        "packagesPath": "C:\\Users\\May\\.nuget\\packages\\",
+        "outputPath": "E:\\Coding\\DungeonCrawler\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\May\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp2.2"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp2.2": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp2.2": {
+          "dependencies": {
+            "Microsoft.NETCore.App": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.2.0, )",
+              "autoReferenced": true
+            }
+          },
+          "imports": [
+            "net461"
+          ],
+          "assetTargetFallback": true,
+          "warn": true
+        }
+      }
+    }
+  }
+}

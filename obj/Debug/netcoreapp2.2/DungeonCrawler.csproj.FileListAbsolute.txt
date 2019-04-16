@@ -1,0 +1,11 @@
+E:\Coding\DungeonCrawler\bin\Debug\netcoreapp2.2\DungeonCrawler.deps.json
+E:\Coding\DungeonCrawler\bin\Debug\netcoreapp2.2\DungeonCrawler.runtimeconfig.json
+E:\Coding\DungeonCrawler\bin\Debug\netcoreapp2.2\DungeonCrawler.runtimeconfig.dev.json
+e:\Coding\DungeonCrawler\bin\Debug\netcoreapp2.2\DungeonCrawler.dll
+e:\Coding\DungeonCrawler\bin\Debug\netcoreapp2.2\DungeonCrawler.pdb
+e:\Coding\DungeonCrawler\obj\Debug\netcoreapp2.2\DungeonCrawler.csprojAssemblyReference.cache
+e:\Coding\DungeonCrawler\obj\Debug\netcoreapp2.2\DungeonCrawler.csproj.CoreCompileInputs.cache
+e:\Coding\DungeonCrawler\obj\Debug\netcoreapp2.2\DungeonCrawler.AssemblyInfoInputs.cache
+e:\Coding\DungeonCrawler\obj\Debug\netcoreapp2.2\DungeonCrawler.AssemblyInfo.cs
+e:\Coding\DungeonCrawler\obj\Debug\netcoreapp2.2\DungeonCrawler.dll
+e:\Coding\DungeonCrawler\obj\Debug\netcoreapp2.2\DungeonCrawler.pdb
