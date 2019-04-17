@@ -7,18 +7,15 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Objects
 {
-    class Player
+    class Player : Object
     {
-        public int axisX { get; set; }
-        public int axisY { get; set; }
-
         public int HP, HPMax, MP, MPMax, Exp, Gold;
 
 
         public Player(int x, int y)
         {
-            axisX = x;
-            axisY = y;
+            XAxis = x;
+            YAxis = y;
         }
 
         public static double LevelToExp(int x) => (50 * (x * x));
@@ -55,6 +52,14 @@ namespace DungeonCrawler.Objects
         public static Player GetPlayerAsync(string name){
             //ToDo: Request player from Server
             return new Player(0, 0);
+        }
+
+        public override string ToString(){
+            return "[P]";
+        }
+
+        public ConsoleColor GetColour(){
+            return ConsoleColor.Magenta;
         }
     }
 }

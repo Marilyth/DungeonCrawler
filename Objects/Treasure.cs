@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DungeonCrawler.Objects.Individual
+namespace DungeonCrawler.Objects
 {
     class Treasure
     {

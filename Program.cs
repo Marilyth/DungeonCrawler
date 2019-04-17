@@ -1,12 +1,14 @@
 ﻿using System;
+using DungeonCrawler.Objects;
 
 namespace DungeonCrawler
 {
     class Program
     {
-        public static Objects.Dungeon map;
+        public static Objects.WorldMap map;
         public static AllEnemies information;
         private static ConsoleKeyInfo cki;
+        public static Random ran = new Random();
 
         static void Main(string[] args)
         {
@@ -16,8 +18,7 @@ namespace DungeonCrawler
 
         public void program()
         {
-            Console.SetWindowSize(62, 32);
-
+            Console.SetWindowSize(181, 30);
             information = new AllEnemies();
 
             menuCommand();
@@ -40,23 +41,7 @@ namespace DungeonCrawler
 
         public static void menuCommand()
         {
-            Console.Clear();
-            Console.WriteLine("[1]: Dungeon level 1 - 10");
-                            WriteColored(ConsoleColor.Red, "    Enemies: " + (string.Join(", ", information.getEligable(10))) + "\n");
-                            WriteColored(ConsoleColor.Magenta, "    Bosses: " + (string.Join(", ", information.getEligableBoss(10))) + "\n\n");
-            Console.WriteLine("[2]: Dungeon Level 10 - 20");
-                            WriteColored(ConsoleColor.Red, "    Enemies: " + (string.Join(", ", information.getEligable(20))) + "\n");
-                            WriteColored(ConsoleColor.Magenta, "    Bosses: " + (string.Join(", ", information.getEligableBoss(20))) + "\n\n");
-            Console.WriteLine("[3]: Dungeon Level 20 - 30");
-                            WriteColored(ConsoleColor.Red, "    Enemies: " + (string.Join(", ", information.getEligable(30))) + "\n");
-                            WriteColored(ConsoleColor.Magenta, "    Bosses: " + (string.Join(", ", information.getEligableBoss(30))) + "\n\n");
-            Console.WriteLine("[4]: Dungeon Level 30 - 40");
-                            WriteColored(ConsoleColor.Red, "    Enemies: " + (string.Join(", ", information.getEligable(40))) + "\n");
-                            WriteColored(ConsoleColor.Magenta, "    Bosses: " + (string.Join(", ", information.getEligableBoss(40))) + "\n\n");
-            Console.WriteLine("[H]: Controls");
-            Console.Write("\nInput: ");
-
-            cki = Console.ReadKey();
+            /*cki = Console.ReadKey();
 
             int difficulty = 0;
 
@@ -80,15 +65,21 @@ namespace DungeonCrawler
                 default:
                     menuCommand();
                     return;
-            }
+            }*/
 
-            map = new Objects.Dungeon(20, 20, difficulty);
+            map = new Objects.WorldMap(60, 60);
 
-            map.drawMap(true);
+            map.FillMapRandom(30, 52, BiomeType.Grasslands, 0, 0);
+            map.FillMapRandom(35, 52, BiomeType.Swamp, 0, 25);
+            map.FillMapRandom(60, 10, BiomeType.Cave, 50, 0);
+
+            map.DrawMap();
         }
 
         public void inputCommand()
         {
+            Console.SetWindowSize(60, 30);
+            map.SetPlayer(30, 30);
             ConsoleKeyInfo cki;
             do
             {
@@ -97,30 +88,24 @@ namespace DungeonCrawler
                 switch (cki.Key)
                 {
                     case ConsoleKey.UpArrow:
-                        map.playerMove(0, -1);
+                        map.PlayerMove(0, -1);
                         break;
                     case ConsoleKey.DownArrow:
-                        map.playerMove(0, 1);
+                        map.PlayerMove(0, 1);
                         break;
                     case ConsoleKey.RightArrow:
-                        map.playerMove(1, 0);
+                        map.PlayerMove(1, 0);
                         break;
                     case ConsoleKey.LeftArrow:
-                        map.playerMove(-1, 0);
-                        break;
-                    case ConsoleKey.Enter:
-                        if (map.playerAction == Objects.Dungeon.Situation.Loot)
-                            map.pickUp();
+                        map.PlayerMove(-1, 0);
                         break;
                     default:
-                        map.playerAttack();
                         break;
                 }
-                map.drawMap(false);
+                Console.Clear();
+                map.DrawVisibleMap();
 
             } while (cki.Key != ConsoleKey.Escape);
         }
-
-        public static Action<ConsoleColor, string> WriteColored = (x, y) => { Console.ForegroundColor = x; Console.Write(y); Console.ForegroundColor = ConsoleColor.Gray; };
     }
 }
