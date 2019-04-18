@@ -69,7 +69,7 @@ namespace DungeonCrawler
             //map = WorldMap.LoadMap();
             map = new Objects.WorldMap(60, 60);
 
-            map.FillMapRandom(60, 60, BiomeType.Desert, 0, 0);
+            map.FillMapRandom(60, 60, BiomeType.Cave, 0, 0);
             //map.FillMapRandom(35, 52, BiomeType.Swamp, 0, 25);
             //map.FillMapRandom(60, 10, BiomeType.Cave, 50, 0);
 

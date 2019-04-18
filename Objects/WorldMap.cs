@@ -101,6 +101,9 @@ namespace DungeonCrawler.Objects
                     else
                         shadowFields.Add(curField);
                 }
+
+                if(!inLineOfSight)
+                    shadowFields.Add(goal);
             }
 
             //Last line
@@ -120,6 +123,9 @@ namespace DungeonCrawler.Objects
                     else
                         shadowFields.Add(curField);
                 }
+
+                if(!inLineOfSight)
+                    shadowFields.Add(goal);
             }
 
             //Left line
@@ -139,6 +145,8 @@ namespace DungeonCrawler.Objects
                     else
                         shadowFields.Add(curField);
                 }
+                if(!inLineOfSight)
+                    shadowFields.Add(goal);
             }
 
             //Right line
@@ -158,6 +166,9 @@ namespace DungeonCrawler.Objects
                     else
                         shadowFields.Add(curField);
                 }
+
+                if(!inLineOfSight)
+                    shadowFields.Add(goal);
             }
 
             return shadowFields;
@@ -216,13 +227,13 @@ namespace DungeonCrawler.Objects
                 User.XAxis += x;
                 User.YAxis += y;
                 nextField.Occupant = User;
-                if (previousField.Occupant.Name.Equals(User.Name)) previousField.Occupant = null;
+                if (previousField.Occupant?.Name.Equals(User.Name) ?? false) previousField.Occupant = null;
             }
             else if (User.Name.Equals("God"))
             {
                 User.XAxis += x;
                 User.YAxis += y;
-                if (previousField.Occupant.Name.Equals(User.Name)) previousField.Occupant = null;
+                if (previousField.Occupant?.Name.Equals(User.Name) ?? false) previousField.Occupant = null;
             }
         }
 
