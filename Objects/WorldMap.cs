@@ -85,21 +85,26 @@ namespace DungeonCrawler.Objects
             //Calculate line of sight
             var shadowFields = new HashSet<Tuple<int, int>>();
             //First line
-            for(int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
+            for(int x = Math.Max(User.XAxis - 10, 0); x <= Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
                 var y = Math.Max(User.YAxis - 10, 0);
                 var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
-                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/(normal*1.1), (y - User.YAxis)/(normal*1.1));
 
                 bool inLineOfSight = true;
                 int i = 1;
                 Tuple<int, int> curField;
+                Tuple<int, int> lastField = Tuple.Create(User.XAxis, User.YAxis);
                 Tuple<int, int> goal = Tuple.Create(x, y);
-                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 || curField.Item2 != goal.Item2){
                     i++;
-                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                    if(lastField.Item1 == curField.Item1 && lastField.Item2 == curField.Item2) continue;
+                    
+                    if(inLineOfSight)
                         inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
                     else
                         shadowFields.Add(curField);
+
+                    lastField = curField;
                 }
 
                 if(!inLineOfSight)
@@ -107,21 +112,26 @@ namespace DungeonCrawler.Objects
             }
 
             //Last line
-            for(int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
+            for(int x = Math.Max(User.XAxis - 10, 0); x <= Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
                 var y = Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10);
                 var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
-                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/(normal*1.1), (y - User.YAxis)/(normal*1.1));
 
                 bool inLineOfSight = true;
                 int i = 1;
                 Tuple<int, int> curField;
+                Tuple<int, int> lastField = Tuple.Create(User.XAxis, User.YAxis);
                 Tuple<int, int> goal = Tuple.Create(x, y);
-                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 || curField.Item2 != goal.Item2){
                     i++;
-                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                    if(lastField.Item1 == curField.Item1 && lastField.Item2 == curField.Item2) continue;
+                    
+                    if(inLineOfSight)
                         inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
                     else
                         shadowFields.Add(curField);
+
+                    lastField = curField;
                 }
 
                 if(!inLineOfSight)
@@ -129,42 +139,53 @@ namespace DungeonCrawler.Objects
             }
 
             //Left line
-            for(int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
+            for(int y = Math.Max(User.YAxis - 10, 0); y <= Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
                 var x = Math.Max(User.XAxis - 10, 0);
                 var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
-                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/(normal*1.1), (y - User.YAxis)/(normal*1.1));
 
                 bool inLineOfSight = true;
+                Tuple<int, int> LOSBreaker;
                 int i = 1;
                 Tuple<int, int> curField;
+                Tuple<int, int> lastField = Tuple.Create(User.XAxis, User.YAxis);
                 Tuple<int, int> goal = Tuple.Create(x, y);
-                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 || curField.Item2 != goal.Item2){
                     i++;
-                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                    if(lastField.Item1 == curField.Item1 && lastField.Item2 == curField.Item2) continue;
+                    
+                    if(inLineOfSight)
                         inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
                     else
                         shadowFields.Add(curField);
+
+                    lastField = curField;
                 }
                 if(!inLineOfSight)
                     shadowFields.Add(goal);
             }
 
             //Right line
-            for(int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
+            for(int y = Math.Max(User.YAxis - 10, 0); y <= Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
                 var x = Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10);
                 var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
-                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/(normal*1.1), (y - User.YAxis)/(normal*1.1));
 
                 bool inLineOfSight = true;
                 int i = 1;
                 Tuple<int, int> curField;
+                Tuple<int, int> lastField = Tuple.Create(User.XAxis, User.YAxis);
                 Tuple<int, int> goal = Tuple.Create(x, y);
-                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 || curField.Item2 != goal.Item2){
                     i++;
-                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                    if(lastField.Item1 == curField.Item1 && lastField.Item2 == curField.Item2) continue;
+                    
+                    if(inLineOfSight)
                         inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
                     else
                         shadowFields.Add(curField);
+
+                    lastField = curField;
                 }
 
                 if(!inLineOfSight)
