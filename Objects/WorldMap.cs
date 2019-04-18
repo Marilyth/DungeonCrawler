@@ -81,22 +81,99 @@ namespace DungeonCrawler.Objects
             }
         }
 
+        public HashSet<Tuple<int, int>> GetShadows(){
+            //Calculate line of sight
+            var shadowFields = new HashSet<Tuple<int, int>>();
+            //First line
+            for(int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
+                var y = Math.Max(User.YAxis - 10, 0);
+                var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+
+                bool inLineOfSight = true;
+                int i = 1;
+                Tuple<int, int> curField;
+                Tuple<int, int> goal = Tuple.Create(x, y);
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                    i++;
+                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                        inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
+                    else
+                        shadowFields.Add(curField);
+                }
+            }
+
+            //Last line
+            for(int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
+                var y = Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10);
+                var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+
+                bool inLineOfSight = true;
+                int i = 1;
+                Tuple<int, int> curField;
+                Tuple<int, int> goal = Tuple.Create(x, y);
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                    i++;
+                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                        inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
+                    else
+                        shadowFields.Add(curField);
+                }
+            }
+
+            //Left line
+            for(int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
+                var x = Math.Max(User.XAxis - 10, 0);
+                var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+
+                bool inLineOfSight = true;
+                int i = 1;
+                Tuple<int, int> curField;
+                Tuple<int, int> goal = Tuple.Create(x, y);
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                    i++;
+                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                        inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
+                    else
+                        shadowFields.Add(curField);
+                }
+            }
+
+            //Right line
+            for(int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
+                var x = Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10);
+                var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
+                Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+
+                bool inLineOfSight = true;
+                int i = 1;
+                Tuple<int, int> curField;
+                Tuple<int, int> goal = Tuple.Create(x, y);
+                while((curField = Tuple.Create(User.XAxis + (int)(i*shadowVector.Item1), User.YAxis + (int)(i*shadowVector.Item2))).Item1 != goal.Item1 && curField.Item2 != goal.Item2){
+                    i++;
+                    if(inLineOfSight && Fields[curField.Item2, curField.Item1].Occupant != User)
+                        inLineOfSight = Fields[curField.Item2, curField.Item1].Occupant == null;
+                    else
+                        shadowFields.Add(curField);
+                }
+            }
+
+            return shadowFields;
+        }
+
         public void DrawVisibleMap()
         {
-            var shadowFields = new HashSet<Tuple<int, int>>();
+            //Calculate line of sight
+            var shadowFields = GetShadows();
+
             for (int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++)
             {
                 for (int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
                 {
                     var fieldString = !shadowFields.Contains(Tuple.Create(x, y)) ? (Fields[y, x].Occupant?.ToString() ?? "   ") : "   ";
                     var fieldColour = !shadowFields.Contains(Tuple.Create(x, y)) ? Field.FieldTextColour(Fields[y, x].Type) : ConsoleColor.Black;
-                    if(Fields[y, x].Occupant != null){
-                        var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
-                        Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
-                        for(int i = 0; i < 5; i++){
-                            shadowFields.Add(Tuple.Create(x + (int)(i*shadowVector.Item1), y + (int)(i*shadowVector.Item2)));
-                        }
-                    }
 
                     Console.BackgroundColor = fieldColour;
                     Console.ForegroundColor = Fields[y, x].Occupant?.GetColour() ?? ConsoleColor.Gray;
@@ -158,8 +235,9 @@ namespace DungeonCrawler.Objects
 
         public void SetField(FieldType type)
         {
-            if (User.Name?.Equals("God") ?? false)
-                Fields[User.YAxis, User.XAxis].Type = type;
+            if (User.Name?.Equals("God") ?? false){
+                Fields[User.YAxis, User.XAxis] = new Field(type);
+            }
         }
 
         public void SetField(int type)
@@ -167,7 +245,7 @@ namespace DungeonCrawler.Objects
             if (User.Name?.Equals("God") ?? false)
             {
                 var types = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToArray();
-                Fields[User.YAxis, User.XAxis].Type = types[type % types.Length];
+                Fields[User.YAxis, User.XAxis] = new Field(types[type % types.Length]);
             }
         }
 
