@@ -66,10 +66,10 @@ namespace DungeonCrawler
                     menuCommand();
                     return;
             }*/
-
+            //map = WorldMap.LoadMap();
             map = new Objects.WorldMap(60, 60);
 
-            map.FillMapRandom(60, 60, BiomeType.Desert, 0, 0);
+            map.FillMapRandom(60, 60, BiomeType.Cave, 0, 0);
             //map.FillMapRandom(35, 52, BiomeType.Swamp, 0, 25);
             //map.FillMapRandom(60, 10, BiomeType.Cave, 50, 0);
 
@@ -99,6 +99,14 @@ namespace DungeonCrawler
                         break;
                     case ConsoleKey.LeftArrow:
                         map.PlayerMove(-1, 0);
+                        break;
+                    case ConsoleKey.S:
+                        map.SaveMap();
+                        Console.WriteLine("Saved map successfully!");
+                        break;
+                    case ConsoleKey.L:
+                        map = WorldMap.LoadMap();
+                        Console.WriteLine("Loaded map successfully!");
                         break;
                     default:
                         var worked = int.TryParse(""+cki.KeyChar, out int number);

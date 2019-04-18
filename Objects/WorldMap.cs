@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace DungeonCrawler.Objects
 {
@@ -12,10 +13,13 @@ namespace DungeonCrawler.Objects
         public Field[,] Fields;
         public Player User;
 
-        public WorldMap(int xTotal, int yTotal){
+        public WorldMap(int xTotal, int yTotal)
+        {
             Fields = new Field[yTotal, xTotal];
-            for(int i = 0; i < xTotal; i++){
-                for(int j = 0; j < yTotal; j++){
+            for (int i = 0; i < xTotal; i++)
+            {
+                for (int j = 0; j < yTotal; j++)
+                {
                     Fields[j, i] = new Field(FieldType.None);
                 }
             }
@@ -27,7 +31,8 @@ namespace DungeonCrawler.Objects
             int yRel = y == -1 ? Program.ran.Next(Fields.GetLength(0) - height) : y;
             Dictionary<FieldType, double> creationChance = null;
             Dictionary<FieldType, double> duplicationChance = null;
-            switch(biome){
+            switch (biome)
+            {
                 case BiomeType.Swamp:
                     creationChance = RNGMapGeneration.FieldCreationChanceSwamp;
                     duplicationChance = RNGMapGeneration.FieldDuplicationChanceSwamp;
@@ -51,22 +56,24 @@ namespace DungeonCrawler.Objects
             for (int xc = xRel; xc - xRel < width && xc < Fields.GetLength(1); xc++)
             {
                 for (int yc = yRel; yc - yRel < height && yc < Fields.GetLength(0); yc++)
-                {   
+                {
                     List<FieldType> partners = new List<FieldType>();
                     partners.Add(xc == 0 ? FieldType.None : Fields[yc, xc - 1].Type);
                     partners.Add(yc == 0 ? FieldType.None : Fields[yc - 1, xc].Type);
-                    partners.Add(yc == Fields.GetLength(0) - 1 ? FieldType.None : Fields[yc+1, xc].Type);
-                    partners.Add(xc == Fields.GetLength(1) - 1 ? FieldType.None : Fields[yc, xc+1].Type);
+                    partners.Add(yc == Fields.GetLength(0) - 1 ? FieldType.None : Fields[yc + 1, xc].Type);
+                    partners.Add(xc == Fields.GetLength(1) - 1 ? FieldType.None : Fields[yc, xc + 1].Type);
                     partners = partners.OrderBy(t => duplicationChance[t]).ToList();
 
                     var roll = Program.ran.NextDouble();
-                    foreach(var field in partners){
-                        if(roll < duplicationChance[field]){
+                    foreach (var field in partners)
+                    {
+                        if (roll < duplicationChance[field])
+                        {
                             curType = field;
                             break;
                         }
                     }
-                    if(curType == FieldType.None) curType = RNGMapGeneration.CreateField(creationChance);
+                    if (curType == FieldType.None) curType = RNGMapGeneration.CreateField(creationChance);
 
                     Fields[yc, xc] = new Field(curType);
                     curType = FieldType.None;
@@ -74,12 +81,22 @@ namespace DungeonCrawler.Objects
             }
         }
 
-        public void DrawVisibleMap(){
-            for( int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
+        public void DrawVisibleMap()
+        {
+            var shadowFields = new HashSet<Tuple<int, int>>();
+            for (int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++)
+            {
                 for (int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
                 {
-                    var fieldString = Fields[y, x].Occupant?.ToString() ?? "   ";
-                    var fieldColour = Field.FieldTextColour(Fields[y, x].Type);
+                    var fieldString = !shadowFields.Contains(Tuple.Create(x, y)) ? (Fields[y, x].Occupant?.ToString() ?? "   ") : "   ";
+                    var fieldColour = !shadowFields.Contains(Tuple.Create(x, y)) ? Field.FieldTextColour(Fields[y, x].Type) : ConsoleColor.Black;
+                    if(Fields[y, x].Occupant != null){
+                        var normal = Math.Sqrt(Math.Pow(x - User.XAxis, 2) + Math.Pow(y - User.YAxis, 2));
+                        Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/normal, (y - User.YAxis)/normal);
+                        for(int i = 0; i < 5; i++){
+                            shadowFields.Add(Tuple.Create(x + (int)(i*shadowVector.Item1), y + (int)(i*shadowVector.Item2)));
+                        }
+                    }
 
                     Console.BackgroundColor = fieldColour;
                     Console.ForegroundColor = Fields[y, x].Occupant?.GetColour() ?? ConsoleColor.Gray;
@@ -110,39 +127,64 @@ namespace DungeonCrawler.Objects
             }
         }
 
-        public void PlayerMove(int x = 0, int y = 0){
-            if(User.XAxis + x < 0 || User.XAxis + x >= Fields.GetLength(1)) return;
-            if(User.YAxis + y < 0 || User.YAxis + y >= Fields.GetLength(0)) return;
+        public void PlayerMove(int x = 0, int y = 0)
+        {
+            if (User.XAxis + x < 0 || User.XAxis + x >= Fields.GetLength(1)) return;
+            if (User.YAxis + y < 0 || User.YAxis + y >= Fields.GetLength(0)) return;
 
             var previousField = Fields[User.YAxis, User.XAxis];
             var nextField = Fields[User.YAxis + y, User.XAxis + x];
-            if(nextField.Occupant == null){
+            if (nextField.Occupant == null)
+            {
                 User.XAxis += x;
                 User.YAxis += y;
                 nextField.Occupant = User;
-                if(previousField.Occupant == User) previousField.Occupant = null;
-            } else if(User.Name.Equals("God")){
+                if (previousField.Occupant.Name.Equals(User.Name)) previousField.Occupant = null;
+            }
+            else if (User.Name.Equals("God"))
+            {
                 User.XAxis += x;
                 User.YAxis += y;
-                if(previousField.Occupant == User) previousField.Occupant = null;
+                if (previousField.Occupant.Name.Equals(User.Name)) previousField.Occupant = null;
             }
         }
 
-        public void SetPlayer(int x = 0, int y = 0, string name = "God"){
+        public void SetPlayer(int x = 0, int y = 0, string name = "God")
+        {
             User = new Player(x, y);
             User.Name = name;
             Fields[y, x].Occupant = User;
         }
 
-        public void SetField(FieldType type){
-            if(User.Name?.Equals("God") ?? false)
+        public void SetField(FieldType type)
+        {
+            if (User.Name?.Equals("God") ?? false)
                 Fields[User.YAxis, User.XAxis].Type = type;
         }
 
-        public void SetField(int type){
-            if(User.Name?.Equals("God") ?? false){
+        public void SetField(int type)
+        {
+            if (User.Name?.Equals("God") ?? false)
+            {
                 var types = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToArray();
-                Fields[User.YAxis, User.XAxis].Type = types[type%types.Length];
+                Fields[User.YAxis, User.XAxis].Type = types[type % types.Length];
+            }
+        }
+
+        public void SaveMap()
+        {
+            using (var sw = new System.IO.StreamWriter("data\\map.json"))
+            {
+                sw.WriteLine(JsonConvert.SerializeObject(this));
+            }
+        }
+
+        public static WorldMap LoadMap()
+        {
+            using (var sr = new System.IO.StreamReader("data\\map.json"))
+            {
+                var map = JsonConvert.DeserializeObject<WorldMap>(sr.ReadToEnd());
+                return map;
             }
         }
     }
@@ -157,8 +199,9 @@ namespace DungeonCrawler.Objects
         public Field(FieldType type)
         {
             Type = type;
-            if(Type == FieldType.Wall)
-                Occupant = new Object(){
+            if (Type == FieldType.Wall)
+                Occupant = new Object()
+                {
                     Name = "Wall"
                 };
         }
@@ -186,9 +229,10 @@ namespace DungeonCrawler.Objects
     }
 
     public enum FieldType { Dirt, Grass, Water, Sand, Wall, Stone, None };
-    public enum BiomeType {Cave, Swamp, Grasslands, Desert}
+    public enum BiomeType { Cave, Swamp, Grasslands, Desert }
 
-    public static class RNGMapGeneration{
+    public static class RNGMapGeneration
+    {
         public static Dictionary<FieldType, double> FieldDuplicationChanceSwamp = new Dictionary<FieldType, double>(){
             {FieldType.Dirt, 0.7},
             {FieldType.Water, 0.4},
@@ -256,13 +300,15 @@ namespace DungeonCrawler.Objects
             {FieldType.Stone, 1}
         };
 
-        public static FieldType CreateField(Dictionary<FieldType, double> biome){
+        public static FieldType CreateField(Dictionary<FieldType, double> biome)
+        {
             FieldType curType = FieldType.None;
 
-            while(curType == FieldType.None){
+            while (curType == FieldType.None)
+            {
                 var roll = Program.ran.NextDouble();
                 var type = biome.ToList()[Program.ran.Next(0, biome.Count)];
-                if(roll < type.Value) curType = type.Key;
+                if (roll < type.Value) curType = type.Key;
             }
 
             return curType;
