@@ -157,8 +157,10 @@ namespace DungeonCrawler.Objects
             {
                 for (int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
                 {
-                    var fieldString = visibleFields.Contains(Tuple.Create(x, y)) ? (Fields[y, x].Occupant?.ToString() ?? "   ") : "   ";
-                    var fieldColour = visibleFields.Contains(Tuple.Create(x, y)) ? Field.FieldTextColour(Fields[y, x].Type) : ConsoleColor.Black;
+                    var fieldString = visibleFields.Contains(Tuple.Create(x, y)) ? (Fields[y, x].Occupant?.ToString() ?? "   ") : " ? ";
+                    var fieldColour = visibleFields.Contains(Tuple.Create(x, y)) ? Field.FieldTextColour(Fields[y, x].Type) : 
+                                        ((int)Field.FieldTextColour(Fields[y, x].Type) >= 9 ? Field.FieldTextColour(Fields[y, x].Type) - 8
+                                                                                            : Field.FieldTextColour(Fields[y, x].Type));
 
                     Console.BackgroundColor = fieldColour;
                     Console.ForegroundColor = Fields[y, x].Occupant?.GetColour() ?? ConsoleColor.Gray;
@@ -281,7 +283,7 @@ namespace DungeonCrawler.Objects
                 case FieldType.Water:
                     return ConsoleColor.Blue;
                 case FieldType.Grass:
-                    return ConsoleColor.DarkGreen;
+                    return ConsoleColor.Green;
                 case FieldType.Wall:
                     return ConsoleColor.DarkGray;
                 case FieldType.Stone:
