@@ -1,2 +1,2 @@
 # DungeonCrawler
-Console based randomly generated 20x20 Dungeons to farm and level up! kya?
+Console based 20x20 MMORPG project
