@@ -145,7 +145,6 @@ namespace DungeonCrawler.Objects
                 Tuple<double, double> shadowVector = Tuple.Create((x - User.XAxis)/(normal*1.1), (y - User.YAxis)/(normal*1.1));
 
                 bool inLineOfSight = true;
-                Tuple<int, int> LOSBreaker;
                 int i = 1;
                 Tuple<int, int> curField;
                 Tuple<int, int> lastField = Tuple.Create(User.XAxis, User.YAxis);
