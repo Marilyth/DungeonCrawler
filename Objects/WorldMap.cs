@@ -29,24 +29,24 @@ namespace DungeonCrawler.Objects
             Dictionary<FieldType, double> duplicationChance = null;
             switch(biome){
                 case BiomeType.Swamp:
-                    creationChance = MapGeneration.FieldCreationChanceSwamp;
-                    duplicationChance = MapGeneration.FieldDuplicationChanceSwamp;
+                    creationChance = RNGMapGeneration.FieldCreationChanceSwamp;
+                    duplicationChance = RNGMapGeneration.FieldDuplicationChanceSwamp;
                     break;
                 case BiomeType.Desert:
-                    creationChance = MapGeneration.FieldCreationChanceDesert;
-                    duplicationChance = MapGeneration.FieldDuplicationChanceDesert;
+                    creationChance = RNGMapGeneration.FieldCreationChanceDesert;
+                    duplicationChance = RNGMapGeneration.FieldDuplicationChanceDesert;
                     break;
                 case BiomeType.Grasslands:
-                    creationChance = MapGeneration.FieldCreationChanceGrasslands;
-                    duplicationChance = MapGeneration.FieldDuplicationChanceGrasslands;
+                    creationChance = RNGMapGeneration.FieldCreationChanceGrasslands;
+                    duplicationChance = RNGMapGeneration.FieldDuplicationChanceGrasslands;
                     break;
                 case BiomeType.Cave:
-                    creationChance = MapGeneration.FieldCreationChanceCave;
-                    duplicationChance = MapGeneration.FieldDuplicationChanceCave;
+                    creationChance = RNGMapGeneration.FieldCreationChanceCave;
+                    duplicationChance = RNGMapGeneration.FieldDuplicationChanceCave;
                     break;
             }
 
-            FieldType curType = MapGeneration.CreateField(creationChance);
+            FieldType curType = RNGMapGeneration.CreateField(creationChance);
 
             for (int xc = xRel; xc - xRel < width && xc < Fields.GetLength(1); xc++)
             {
@@ -66,7 +66,7 @@ namespace DungeonCrawler.Objects
                             break;
                         }
                     }
-                    if(curType == FieldType.None) curType = MapGeneration.CreateField(creationChance);
+                    if(curType == FieldType.None) curType = RNGMapGeneration.CreateField(creationChance);
 
                     Fields[yc, xc] = new Field(curType);
                     curType = FieldType.None;
@@ -75,8 +75,8 @@ namespace DungeonCrawler.Objects
         }
 
         public void DrawVisibleMap(){
-            for(int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++){
-                for (int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++)
+            for( int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++){
+                for (int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
                 {
                     var fieldString = Fields[y, x].Occupant?.ToString() ?? "   ";
                     var fieldColour = Field.FieldTextColour(Fields[y, x].Type);
@@ -93,9 +93,9 @@ namespace DungeonCrawler.Objects
 
         public void DrawMap()
         {
-            for (int i = 0; i < Fields.GetLength(1); i++)
+            for (int j = 0; j < Fields.GetLength(0); j++)
             {
-                for (int j = 0; j < Fields.GetLength(0); j++)
+                for (int i = 0; i < Fields.GetLength(1); i++)
                 {
                     var fieldString = "   ";//Field.FieldToString(Fields[i, j].Type);
                     var fieldColour = Field.FieldTextColour(Fields[j, i].Type);
@@ -110,19 +110,40 @@ namespace DungeonCrawler.Objects
             }
         }
 
-        public void PlayerMove(int y = 0, int x = 0){
+        public void PlayerMove(int x = 0, int y = 0){
             if(User.XAxis + x < 0 || User.XAxis + x >= Fields.GetLength(1)) return;
             if(User.YAxis + y < 0 || User.YAxis + y >= Fields.GetLength(0)) return;
 
-            User.XAxis += x;
-            User.YAxis += y;
-            Fields[User.YAxis, User.XAxis].Occupant = User;
-            Fields[User.YAxis - y, User.XAxis - x].Occupant = null;
+            var previousField = Fields[User.YAxis, User.XAxis];
+            var nextField = Fields[User.YAxis + y, User.XAxis + x];
+            if(nextField.Occupant == null){
+                User.XAxis += x;
+                User.YAxis += y;
+                nextField.Occupant = User;
+                if(previousField.Occupant == User) previousField.Occupant = null;
+            } else if(User.Name.Equals("God")){
+                User.XAxis += x;
+                User.YAxis += y;
+                if(previousField.Occupant == User) previousField.Occupant = null;
+            }
         }
 
-        public void SetPlayer(int x = 0, int y = 0){
+        public void SetPlayer(int x = 0, int y = 0, string name = "God"){
             User = new Player(x, y);
+            User.Name = name;
             Fields[y, x].Occupant = User;
+        }
+
+        public void SetField(FieldType type){
+            if(User.Name?.Equals("God") ?? false)
+                Fields[User.YAxis, User.XAxis].Type = type;
+        }
+
+        public void SetField(int type){
+            if(User.Name?.Equals("God") ?? false){
+                var types = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToArray();
+                Fields[User.YAxis, User.XAxis].Type = types[type%types.Length];
+            }
         }
     }
     public class Field
@@ -130,10 +151,16 @@ namespace DungeonCrawler.Objects
         public int XAxis, YAxis;
         public FieldType Type;
         public Object Occupant;
+        public Object Burried;
+        public Object Hidden;
 
         public Field(FieldType type)
         {
             Type = type;
+            if(Type == FieldType.Wall)
+                Occupant = new Object(){
+                    Name = "Wall"
+                };
         }
 
         public static ConsoleColor FieldTextColour(FieldType type)
@@ -151,7 +178,7 @@ namespace DungeonCrawler.Objects
                 case FieldType.Wall:
                     return ConsoleColor.DarkGray;
                 case FieldType.Stone:
-                    return ConsoleColor.Black;
+                    return ConsoleColor.Gray;
                 default:
                     return ConsoleColor.Black;
             }
@@ -161,7 +188,7 @@ namespace DungeonCrawler.Objects
     public enum FieldType { Dirt, Grass, Water, Sand, Wall, Stone, None };
     public enum BiomeType {Cave, Swamp, Grasslands, Desert}
 
-    public static class MapGeneration{
+    public static class RNGMapGeneration{
         public static Dictionary<FieldType, double> FieldDuplicationChanceSwamp = new Dictionary<FieldType, double>(){
             {FieldType.Dirt, 0.7},
             {FieldType.Water, 0.4},

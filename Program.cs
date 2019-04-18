@@ -69,17 +69,18 @@ namespace DungeonCrawler
 
             map = new Objects.WorldMap(60, 60);
 
-            map.FillMapRandom(30, 52, BiomeType.Grasslands, 0, 0);
-            map.FillMapRandom(35, 52, BiomeType.Swamp, 0, 25);
-            map.FillMapRandom(60, 10, BiomeType.Cave, 50, 0);
+            map.FillMapRandom(60, 60, BiomeType.Desert, 0, 0);
+            //map.FillMapRandom(35, 52, BiomeType.Swamp, 0, 25);
+            //map.FillMapRandom(60, 10, BiomeType.Cave, 50, 0);
 
-            map.DrawMap();
+            //map.DrawMap();
         }
 
         public void inputCommand()
         {
             Console.SetWindowSize(60, 30);
-            map.SetPlayer(30, 30);
+            map.SetPlayer(30, 30, "God");
+            map.DrawVisibleMap();
             ConsoleKeyInfo cki;
             do
             {
@@ -100,7 +101,10 @@ namespace DungeonCrawler
                         map.PlayerMove(-1, 0);
                         break;
                     default:
+                        var worked = int.TryParse(""+cki.KeyChar, out int number);
+                        if(worked) map.SetField(number);
                         break;
+
                 }
                 Console.Clear();
                 map.DrawVisibleMap();

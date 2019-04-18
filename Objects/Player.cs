@@ -54,12 +54,12 @@ namespace DungeonCrawler.Objects
             return new Player(0, 0);
         }
 
-        public override string ToString(){
-            return "[P]";
-        }
+        //public override string ToString(){
+        //    return "[P]";
+        //}
 
-        public ConsoleColor GetColour(){
-            return ConsoleColor.Magenta;
+        public override ConsoleColor GetColour(){
+            return ConsoleColor.Blue;
         }
     }
 }
