@@ -114,7 +114,7 @@ namespace DungeonCrawler
 
                 }
                 map.DrawVisibleMap();
-                //Console.WriteLine(map.User.GetStats());
+                Console.WriteLine(map.User.GetStats());
 
             } while (cki.Key != ConsoleKey.Escape);
         }

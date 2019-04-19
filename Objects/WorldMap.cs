@@ -80,7 +80,7 @@ namespace DungeonCrawler.Objects
                     }
                     if (curType == FieldType.None) curType = RNGMapGeneration.CreateField(creationChance);
 
-                    SetField(curType, yc, xc);
+                    SetField(curType, xc, yc);
                     curType = FieldType.None;
                 }
             }
