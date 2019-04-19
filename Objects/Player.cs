@@ -12,10 +12,8 @@ namespace DungeonCrawler.Objects
         public int HP, HPMax, MP, MPMax, Exp, Gold;
 
 
-        public Player(int x, int y)
+        public Player(int x, int y, string name = "") : base(x, y, name)
         {
-            XAxis = x;
-            YAxis = y;
         }
 
         public static double LevelToExp(int x) => (50 * (x * x));
@@ -41,7 +39,8 @@ namespace DungeonCrawler.Objects
         {
             return $"HP: {HP}/{HPMax}\n" +
                    $"Level: {(int)ExpToLevel(Exp)}  ({CalcNextLevel()})\n"+
-                   $"Gold: {Gold}";
+                   $"Gold: {Gold}\n"+
+                   $"Position: ({XAxis}x, {YAxis}y)";
         }
 
         public void SaveCharacter()

@@ -1,90 +1,86 @@
 ﻿using System;
+using System.IO;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.ComponentModel;
+using Newtonsoft.Json;
+using System.Globalization;
 using DungeonCrawler.Objects;
 
 namespace DungeonCrawler
 {
     class Program
     {
-        public static Objects.WorldMap map;
+        public Objects.WorldMap map;
         public static AllEnemies information;
-        private static ConsoleKeyInfo cki;
         public static Random ran = new Random();
 
         static void Main(string[] args)
         {
             Program p = new Program();
-            p.program();
+            p.Start();
         }
 
-        public void program()
+        public void Start()
         {
             Console.SetWindowSize(181, 30);
             information = new AllEnemies();
 
-            menuCommand();
+            Menu();
 
-            inputCommand();
+            InputLoop();
         }
 
-        private static void help()
+        private static T ChooseEnum<T>() where T : System.Enum
+        {
+            var enumOptions = Enum.GetNames(typeof(T));
+            string menu = String.Join("\n", enumOptions.Select((x, i) => $"[{i}] {x}"));
+            Console.WriteLine(menu);
+            Console.Write("Please enter one of the above numbers: ");
+            bool properInput = false;
+            int decision = -1;
+            while (!(properInput = int.TryParse("" + Console.ReadLine(), out decision)) && decision > 0 && decision < enumOptions.Length)
+                Console.Write("Wrong input.\nPlease enter one of the above numbers: ");
+
+            return (T)Enum.Parse(typeof(T), enumOptions[decision]);
+        }
+
+        public void Menu()
+        {
+            switch (ChooseEnum<MenuOptions>())
+            {
+                case MenuOptions.CreateNewWorld:
+                    Console.Write("How wide do you want your world to be?: ");
+                    int width = int.Parse(Console.ReadLine());
+                    Console.Write("How long do you want your world to be?: ");
+                    int height = int.Parse(Console.ReadLine());
+                    map = new Objects.WorldMap(width, height);
+                    Console.WriteLine("Choose your biome");
+                    var biome = ChooseEnum<Objects.BiomeType>();
+                    map.FillMapRandom(width, height, biome, 0, 0);
+                    Console.Write("What is your name?: ");
+                    map.SetPlayer(map.Fields.GetLength(1) / 2, map.Fields.GetLength(0) / 2, Console.ReadLine());
+                    break;
+                case MenuOptions.LoadExistingWorld:
+                    map = WorldMap.LoadMap();
+                    break;
+            }
+
+            InputLoop();
+        }
+
+        public void InputLoop()
         {
             Console.Clear();
-            Console.WriteLine("[H] to heal while in Dungeon\n"+ 
-                              "[Arrow Keys] to move while in Dungeon\n"+
-                              "[Enter] to pick up loot\n"+
-                              "[Run out of map] to return from Dungeon\n"+
-                              "[Any other Key] to attack while in Battle");
-            Console.ReadKey();
-
-            menuCommand();
-        }
-
-        public static void menuCommand()
-        {
-            /*cki = Console.ReadKey();
-
-            int difficulty = 0;
-
-            switch (cki.Key)
-            {
-                case ConsoleKey.D1:
-                    difficulty = 10;
-                    break;
-                case ConsoleKey.D2:
-                    difficulty = 20;
-                    break;
-                case ConsoleKey.D3:
-                    difficulty = 30;
-                    break;
-                case ConsoleKey.D4:
-                    difficulty = 40;
-                    break;
-                case ConsoleKey.H:
-                    help();
-                    return;
-                default:
-                    menuCommand();
-                    return;
-            }*/
-            //map = WorldMap.LoadMap();
-            map = new Objects.WorldMap(60, 60);
-
-            map.FillMapRandom(60, 60, BiomeType.Desert, 0, 0);
-            //map.FillMapRandom(35, 52, BiomeType.Swamp, 0, 25);
-            //map.FillMapRandom(60, 10, BiomeType.Cave, 50, 0);
-
-            //map.DrawMap();
-        }
-
-        public void inputCommand()
-        {
             Console.SetWindowSize(60, 30);
-            map.SetPlayer(30, 30, "God");
             map.DrawVisibleMap();
             ConsoleKeyInfo cki;
             do
             {
                 cki = Console.ReadKey();
+                Console.Clear();
 
                 switch (cki.Key)
                 {
@@ -100,6 +96,9 @@ namespace DungeonCrawler
                     case ConsoleKey.LeftArrow:
                         map.PlayerMove(-1, 0);
                         break;
+                    case ConsoleKey.Delete:
+                        Menu();
+                        return;
                     case ConsoleKey.S:
                         map.SaveMap();
                         Console.WriteLine("Saved map successfully!");
@@ -109,15 +108,18 @@ namespace DungeonCrawler
                         Console.WriteLine("Loaded map successfully!");
                         break;
                     default:
-                        var worked = int.TryParse(""+cki.KeyChar, out int number);
-                        if(worked) map.SetField(number);
+                        var worked = int.TryParse("" + cki.KeyChar, out int number);
+                        if (worked) map.SetField(number);
                         break;
 
                 }
-                Console.Clear();
                 map.DrawVisibleMap();
+                //Console.WriteLine(map.User.GetStats());
 
             } while (cki.Key != ConsoleKey.Escape);
         }
+
+        private enum MenuOptions { CreateNewWorld, LoadExistingWorld }
     }
 }
+

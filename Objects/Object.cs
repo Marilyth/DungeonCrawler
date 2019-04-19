@@ -6,6 +6,14 @@ namespace DungeonCrawler.Objects{
         public int XAxis;
         public int YAxis;
         public string Name;
+        public ObjectVisibility Visibility = ObjectVisibility.Occupying;
+        public bool isWalkThrough = false;
+
+        public Object(int XAxis, int YAxis, string Name = ""){
+            this.XAxis = XAxis;
+            this.YAxis = YAxis;
+            this.Name = Name;
+        }
 
         public override string ToString(){
             return $"[{Name.FirstOrDefault()}]";
@@ -15,4 +23,6 @@ namespace DungeonCrawler.Objects{
             return ConsoleColor.Black;
         }
     }
+
+    public enum ObjectVisibility {Burried, Hidden, Occupying}
 }
