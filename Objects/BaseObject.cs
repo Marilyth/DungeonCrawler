@@ -2,14 +2,14 @@ using System;
 using System.Linq;
 
 namespace DungeonCrawler.Objects{
-    public class Object{
+    public class BaseObject{
         public int XAxis;
         public int YAxis;
         public string Name;
         public ObjectVisibility Visibility = ObjectVisibility.Occupying;
         public bool isWalkThrough = false;
 
-        public Object(int XAxis, int YAxis, string Name = ""){
+        public BaseObject(int XAxis, int YAxis, string Name = ""){
             this.XAxis = XAxis;
             this.YAxis = YAxis;
             this.Name = Name;

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Objects
 {
-    class Player : Object
+    public class Player : BaseObject
     {
         public int HP, HPMax, MP, MPMax, Exp, Gold;
 

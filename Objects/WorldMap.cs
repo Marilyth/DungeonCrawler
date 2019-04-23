@@ -8,18 +8,18 @@ using Newtonsoft.Json;
 
 namespace DungeonCrawler.Objects
 {
-    class WorldMap
+    public class WorldMap
     {
         public FieldType[,] Fields;
-        private Dictionary<Tuple<int, int>, Object> ObjectDict;
-        public List<Object> Objects;
-        public Player User;
+        private Dictionary<Tuple<int, int>, BaseObject> BaseObjectDict;
+        public List<BaseObject> BaseObjects;
+        private Player user;
 
         public WorldMap(int xTotal, int yTotal)
         {
             Fields = new FieldType[yTotal, xTotal];
-            ObjectDict = new Dictionary<Tuple<int, int>, Object>();
-            Objects = new List<Object>();
+            BaseObjectDict = new Dictionary<Tuple<int, int>, BaseObject>();
+            BaseObjects = new List<BaseObject>();
 
             for (int i = 0; i < xTotal; i++)
             {
@@ -89,36 +89,36 @@ namespace DungeonCrawler.Objects
         public HashSet<Tuple<int, int>> GetLineOfSight()
         {
             //Calculate line of sight
-            var visibleFields = new HashSet<Tuple<int, int>>(){Tuple.Create(User.XAxis, User.YAxis)};
+            var visibleFields = new HashSet<Tuple<int, int>>() { Tuple.Create(user.XAxis, user.YAxis) };
 
             //First line
-            for (int x = Math.Max(User.XAxis - 10, 0); x <= Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
+            for (int x = Math.Max(user.XAxis - 10, 0); x <= Math.Min(Fields.GetLength(1) - 1, user.XAxis + 10); x++)
             {
-                var y = Math.Max(User.YAxis - 10, 0);
+                var y = Math.Max(user.YAxis - 10, 0);
                 Tuple<int, int> goal = Tuple.Create(x, y);
                 visibleFields.UnionWith(getVisibleFields(goal));
             }
 
             //Last line
-            for (int x = Math.Max(User.XAxis - 10, 0); x <= Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
+            for (int x = Math.Max(user.XAxis - 10, 0); x <= Math.Min(Fields.GetLength(1) - 1, user.XAxis + 10); x++)
             {
-                var y = Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10);
+                var y = Math.Min(Fields.GetLength(0) - 1, user.YAxis + 10);
                 Tuple<int, int> goal = Tuple.Create(x, y);
                 visibleFields.UnionWith(getVisibleFields(goal));
             }
 
             //Left line
-            for (int y = Math.Max(User.YAxis - 10, 0); y <= Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++)
+            for (int y = Math.Max(user.YAxis - 10, 0); y <= Math.Min(Fields.GetLength(0) - 1, user.YAxis + 10); y++)
             {
-                var x = Math.Max(User.XAxis - 10, 0);
+                var x = Math.Max(user.XAxis - 10, 0);
                 Tuple<int, int> goal = Tuple.Create(x, y);
                 visibleFields.UnionWith(getVisibleFields(goal));
             }
 
             //Right line
-            for (int y = Math.Max(User.YAxis - 10, 0); y <= Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++)
+            for (int y = Math.Max(user.YAxis - 10, 0); y <= Math.Min(Fields.GetLength(0) - 1, user.YAxis + 10); y++)
             {
-                var x = Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10);
+                var x = Math.Min(Fields.GetLength(1) - 1, user.XAxis + 10);
                 Tuple<int, int> goal = Tuple.Create(x, y);
                 visibleFields.UnionWith(getVisibleFields(goal));
             }
@@ -130,20 +130,21 @@ namespace DungeonCrawler.Objects
         {
             HashSet<Tuple<int, int>> visibleFields = new HashSet<Tuple<int, int>>();
 
-            var normal = Math.Sqrt(Math.Pow(goal.Item1 - User.XAxis, 2) + Math.Pow(goal.Item2 - User.YAxis, 2));
-            Tuple<double, double> shadowVector = Tuple.Create((goal.Item1 - User.XAxis) / (normal * 1.1), (goal.Item2 - User.YAxis) / (normal * 1.1));
+            var normal = Math.Sqrt(Math.Pow(goal.Item1 - user.XAxis, 2) + Math.Pow(goal.Item2 - user.YAxis, 2));
+            Tuple<double, double> shadowVector = Tuple.Create((goal.Item1 - user.XAxis) / (normal * 1.1), (goal.Item2 - user.YAxis) / (normal * 1.1));
 
             bool inLineOfSight = true;
             int i = 1;
             Tuple<int, int> curField;
-            Tuple<int, int> lastField = Tuple.Create(User.YAxis, User.XAxis);
-            while (!(curField = Tuple.Create(User.XAxis + (int)(i * shadowVector.Item1), User.YAxis + (int)(i * shadowVector.Item2))).Equals(goal) && inLineOfSight)
+            Tuple<int, int> lastField = Tuple.Create(user.YAxis, user.XAxis);
+            while (!(curField = Tuple.Create(user.XAxis + (int)(i * shadowVector.Item1), user.YAxis + (int)(i * shadowVector.Item2))).Equals(goal) && inLineOfSight)
             {
                 i++;
                 if (lastField.Equals(curField)) continue;
                 visibleFields.Add(curField);
-                var worked = ObjectDict.TryGetValue(Tuple.Create(curField.Item2, curField.Item1), out Object occupant);
-                if(worked){
+                var worked = BaseObjectDict.TryGetValue(Tuple.Create(curField.Item2, curField.Item1), out BaseObject occupant);
+                if (worked)
+                {
                     inLineOfSight = occupant?.Visibility != ObjectVisibility.Occupying;
                 }
 
@@ -161,24 +162,29 @@ namespace DungeonCrawler.Objects
             //Calculate line of sight
             var visibleFields = GetLineOfSight();
 
-            for (int y = Math.Max(User.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, User.YAxis + 10); y++)
+            for (int y = Math.Max(user.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, user.YAxis + 10); y++)
             {
-                for (int x = Math.Max(User.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, User.XAxis + 10); x++)
+                for (int x = Math.Max(user.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, user.XAxis + 10); x++)
                 {
-                    ObjectDict.TryGetValue(Tuple.Create(y, x), out Object occupant);
+                    BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
                     var fieldString = (occupant?.ToString() ?? "   ");
                     var fieldColour = Field.FieldTextColour(Fields[y, x]);
-                    if(!visibleFields.Contains(Tuple.Create(x, y))){
+                    if (!visibleFields.Contains(Tuple.Create(x, y)))
+                    {
                         fieldString = " ? ";
-                        if((int)Field.FieldTextColour(Fields[y, x]) >= 9){
+                        if ((int)Field.FieldTextColour(Fields[y, x]) >= 9)
+                        {
                             fieldColour = Field.FieldTextColour(Fields[y, x]) - 8;
-                        } else if(Field.FieldTextColour(Fields[y, x]) == ConsoleColor.Gray){
+                        }
+                        else if (Field.FieldTextColour(Fields[y, x]) == ConsoleColor.Gray)
+                        {
                             fieldColour = ConsoleColor.DarkGray;
                         }
                     }
-                    if(User.XAxis == x && User.YAxis == y){
-                        occupant = User;
-                        fieldString = User.ToString();
+                    if (user.XAxis == x && user.YAxis == y)
+                    {
+                        occupant = user;
+                        fieldString = user.ToString();
                     }
 
                     Console.BackgroundColor = fieldColour;
@@ -212,59 +218,73 @@ namespace DungeonCrawler.Objects
 
         public void PlayerMove(int x = 0, int y = 0)
         {
-            if (User.XAxis + x < 0 || User.XAxis + x >= Fields.GetLength(1)) return;
-            if (User.YAxis + y < 0 || User.YAxis + y >= Fields.GetLength(0)) return;
+            if (user.XAxis + x < 0 || user.XAxis + x >= Fields.GetLength(1)) return;
+            if (user.YAxis + y < 0 || user.YAxis + y >= Fields.GetLength(0)) return;
 
-            var previousField = Tuple.Create(User.YAxis, User.XAxis);
-            var nextField = Tuple.Create(User.YAxis + y, User.XAxis + x);
-            if (!ObjectDict.ContainsKey(nextField) || ObjectDict[nextField].isWalkThrough)
+            var previousField = Tuple.Create(user.YAxis, user.XAxis);
+            var nextField = Tuple.Create(user.YAxis + y, user.XAxis + x);
+            if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough)
             {
-                User.XAxis += x;
-                User.YAxis += y;
+                user.XAxis += x;
+                user.YAxis += y;
             }
-            else if (User.Name.Equals("God"))
+            else if (user.Name.Equals("God"))
             {
-                User.XAxis += x;
-                User.YAxis += y;
+                user.XAxis += x;
+                user.YAxis += y;
             }
         }
 
         public void SetPlayer(int x = -1, int y = -1, string name = "")
         {
-            User = new Player(x, y);
-            User.Name = name;
+            user = new Player(x, y);
+            user.Name = name;
+        }
+
+        public void SetPlayer(Player player)
+        {
+            user = player;
+        }
+
+        public Player GetPlayer(){
+            return user;
         }
 
         public void SetField(FieldType type, int x, int y)
         {
             Fields[y, x] = type;
-            if(type == FieldType.Wall){
-                AddObject(new Object(x, y, "Wall"));
+            if (type == FieldType.Wall)
+            {
+                AddBaseObject(new BaseObject(x, y, "Wall"));
             }
         }
 
-        public void SetField(int type)
+        public async Task SetField(int type)
         {
-            if (User.Name?.Equals("God") ?? false)
+            if (user.Name?.Equals("God") ?? false)
             {
                 var types = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToArray();
-                Fields[User.YAxis, User.XAxis] = types[type % types.Length];
-                if(types[type % types.Length] == FieldType.Wall){
-                    AddObject(new Object(User.XAxis, User.YAxis, "Wall"));
+                Fields[user.YAxis, user.XAxis] = types[type % types.Length];
+                if (types[type % types.Length] == FieldType.Wall)
+                {
+                    AddBaseObject(new BaseObject(user.XAxis, user.YAxis, "Wall"));
                 }
+                await ClientWorldChanged(MapChange.FieldChanged, Tuple.Create(user.YAxis, user.XAxis), Fields[user.YAxis, user.XAxis]);
             }
         }
 
-        public void LoadObjects()
+        public void LoadBaseObjects()
         {
-            foreach(Object o in Objects){
-                ObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
+            foreach (BaseObject o in BaseObjects)
+            {
+                BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
             }
         }
 
-        public void AddObject(Object o){
-            Objects.Add(o);
-            ObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
+        public void AddBaseObject(BaseObject o)
+        {
+            BaseObjects.Add(o);
+            BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
         }
 
         public void SaveMap()
@@ -275,17 +295,60 @@ namespace DungeonCrawler.Objects
             }
         }
 
-        public static WorldMap LoadMap()
+        public async Task ClientWorldChanged(MapChange type, object before, object after){
+            string changeJSON = JsonConvert.SerializeObject(new object[]{
+                type, before, after
+            });
+
+            await Program.Client.SendToServer("WorldChanged>>"+changeJSON);
+        }
+
+        public void ServerWorldChanged(MapChange type, object before, object after){
+            switch(type){
+                case MapChange.ObjectAppeared:
+                    AddBaseObject(after as BaseObject);
+                    break;
+                case MapChange.ObjectDisappeared:
+                    BaseObject cur = before as BaseObject;
+                    BaseObjectDict.Remove(Tuple.Create(cur.YAxis, cur.XAxis));
+                    break;
+                case MapChange.ObjectMoved:
+                    BaseObject bef = before as BaseObject;
+                    BaseObject aft = after as BaseObject;
+                    BaseObjectDict.Remove(Tuple.Create(bef.YAxis, bef.XAxis));
+                    AddBaseObject(aft);
+                    break;
+                case MapChange.FieldChanged:
+                    FieldType fieldChange = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToList()[Convert.ToInt32(after)];
+                    Tuple<int, int> index = JsonConvert.DeserializeObject<Tuple<int, int>>(before.ToString());
+                    Fields[index.Item1, index.Item2] = fieldChange;
+                    break;
+            }
+
+            SaveMap();
+        }
+
+        public static WorldMap LoadMap(string mapJson = null)
         {
-            using (var sr = new System.IO.StreamReader("data\\map.json"))
+            if (mapJson == null)
             {
-                var map = JsonConvert.DeserializeObject<WorldMap>(sr.ReadToEnd());
-                map.LoadObjects();
+                using (var sr = new System.IO.StreamReader("data\\map.json"))
+                {
+                    var map = JsonConvert.DeserializeObject<WorldMap>(sr.ReadToEnd());
+                    map.LoadBaseObjects();
+                    return map;
+                }
+            }
+            else
+            {
+                var map = JsonConvert.DeserializeObject<WorldMap>(mapJson);
+                map.LoadBaseObjects();
                 return map;
             }
         }
     }
-    public static class Field{
+    public static class Field
+    {
 
         public static ConsoleColor FieldTextColour(FieldType type)
         {
@@ -310,8 +373,9 @@ namespace DungeonCrawler.Objects
     }
 
     public enum FieldType { Dirt, Grass, Water, Sand, Wall, Stone, None };
-    public enum ObjectType { Wall };
+    public enum BaseObjectType { Wall };
     public enum BiomeType { Cave, Swamp, Grasslands, Desert };
+    public enum MapChange { ObjectMoved, ObjectAppeared, ObjectDisappeared, FieldChanged, StatsChanged };
 
     public static class RNGMapGeneration
     {
