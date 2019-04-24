@@ -43,7 +43,6 @@ namespace DungeonCrawler
             try
             {
                 var clientIP = $"{(client.Client.RemoteEndPoint as IPEndPoint).Address}:{(client.Client.RemoteEndPoint as IPEndPoint).Port}";
-                await SendToClient("Available commands:\nFieldChanged>>\n>>ObjectChanged>>{Tuple<int,int,Object>}\nObjectAppeared>>{Object}\nObjectDisappeared>>{Tuple<int,int>}\nStatsChanged>>\nDownloadMap>>\nDownloadPlayer>>", client);
                 while (true)
                 {
                     foreach (var command in (await ObtainFromClient(null, client)).Split("<<"))
@@ -53,6 +52,10 @@ namespace DungeonCrawler
                         if (info[0].StartsWith("DownloadMap"))
                         {
                             await SendToClient(JsonConvert.SerializeObject(Program.map), client);
+                        }
+                        if (info[0].StartsWith("SaveMap"))
+                        {
+                            Program.map.SaveMap();
                         }
                         else if (info[0].StartsWith("DownloadField"))
                         {

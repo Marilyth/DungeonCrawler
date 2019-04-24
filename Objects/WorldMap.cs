@@ -3,6 +3,8 @@ using DungeonCrawler.Objects;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Timers;
@@ -314,7 +316,12 @@ namespace DungeonCrawler.Objects
 
         public void SaveMap()
         {
-            using (var sw = new System.IO.StreamWriter("data\\map.json"))
+            var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            var targetDir = Path.Combine(curDir, "map");
+            if(!Directory.Exists(targetDir))
+                Directory.CreateDirectory(targetDir);
+                
+            using (var sw = new System.IO.StreamWriter($"{targetDir}\\map.json"))
             {
                 sw.WriteLine(JsonConvert.SerializeObject(this));
             }
@@ -324,7 +331,12 @@ namespace DungeonCrawler.Objects
         {
             if (mapJson == null)
             {
-                using (var sr = new System.IO.StreamReader("data\\map.json"))
+                var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                var targetDir = Path.Combine(curDir, "map");
+                if(!Directory.Exists(targetDir))
+                    Directory.CreateDirectory(targetDir);
+
+                using (var sr = new System.IO.StreamReader($"{targetDir}\\map.json"))
                 {
                     var map = JsonConvert.DeserializeObject<WorldMap>(sr.ReadToEnd());
                     map.LoadBaseObjects();

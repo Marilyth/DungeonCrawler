@@ -117,12 +117,8 @@ namespace DungeonCrawler
                         await Menu();
                         return;
                     case ConsoleKey.S:
-                        map.SaveMap();
+                        await Client.SaveMap();
                         Console.WriteLine("Saved map successfully!");
-                        break;
-                    case ConsoleKey.L:
-                        map = WorldMap.LoadMap();
-                        Console.WriteLine("Loaded map successfully!");
                         break;
                     default:
                         var worked = int.TryParse("" + cki.KeyChar, out int number);

@@ -39,6 +39,11 @@ namespace DungeonCrawler
             return JsonConvert.DeserializeObject<WorldMap>(mapJSON);
         }
 
+        public async Task SaveMap()
+        {
+            await SendToServer("SaveMap>><<");
+        }
+
         public async Task<Player> DownloadPlayer(string name)
         {
             Console.WriteLine("Downloading Player...");
