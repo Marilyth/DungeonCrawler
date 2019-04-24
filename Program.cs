@@ -93,6 +93,7 @@ namespace DungeonCrawler
 
             await map.DrawMapSegment();
             map.WritePlayerStats();
+            WorldMap.PlayerAction action = WorldMap.PlayerAction.Walk;
                 
             ConsoleKeyInfo cki;
             do
@@ -102,16 +103,21 @@ namespace DungeonCrawler
                 switch (cki.Key)
                 {
                     case ConsoleKey.UpArrow:
-                        await map.PlayerMove(0, -1);
+                        await map.PlayerMove(0, -1, action);
                         break;
                     case ConsoleKey.DownArrow:
-                        await map.PlayerMove(0, 1);
+                        await map.PlayerMove(0, 1, action);
                         break;
                     case ConsoleKey.RightArrow:
-                        await map.PlayerMove(1, 0);
+                        await map.PlayerMove(1, 0, action);
                         break;
                     case ConsoleKey.LeftArrow:
-                        await map.PlayerMove(-1, 0);
+                        await map.PlayerMove(-1, 0, action);
+                        break;
+                    case ConsoleKey.E:
+                        Console.Clear();
+                        action = ChooseEnum<WorldMap.PlayerAction>();
+                        await map.DrawMapSegment();
                         break;
                     case ConsoleKey.Delete:
                         await Menu();

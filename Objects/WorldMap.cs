@@ -17,6 +17,7 @@ namespace DungeonCrawler.Objects
         private Dictionary<Tuple<int, int>, BaseObject> BaseObjectDict;
         public List<BaseObject> BaseObjects;
         private Player user;
+        public enum PlayerAction { Walk, Look, Use, Push, Pull, Combat }
         private DateTime Timer = DateTime.Now;
 
         public WorldMap(int xTotal, int yTotal)
@@ -161,12 +162,14 @@ namespace DungeonCrawler.Objects
             return visibleFields;
         }
 
-        public async Task DrawField(int x, int y){
-            var xConsole = (x%20)*3;
-            var yConsole = y%20;
+        public async Task DrawField(int x, int y)
+        {
+            var xConsole = (x % 20) * 3;
+            var yConsole = y % 20;
 
             BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
-            if (user.XAxis == x && user.YAxis == y){
+            if (user.XAxis == x && user.YAxis == y)
+            {
                 occupant = user;
             }
 
@@ -181,20 +184,21 @@ namespace DungeonCrawler.Objects
             Console.ResetColor();
         }
 
-        public async Task DrawMapSegment(){
+        public async Task DrawMapSegment()
+        {
             await Program.Client.InterpretLog();
             Console.SetCursorPosition(0, 0);
 
-            var xSegment = (int)user.XAxis/20;
-            var ySegment = (int)user.YAxis/20;
-            for (int y = ySegment*20; y < Math.Min(Fields.GetLength(0), ySegment*20 + 20); y++)
+            var xSegment = (int)user.XAxis / 20;
+            var ySegment = (int)user.YAxis / 20;
+            for (int y = ySegment * 20; y < Math.Min(Fields.GetLength(0), ySegment * 20 + 20); y++)
             {
-                for (int x = xSegment*20; x < Math.Min(Fields.GetLength(1), xSegment*20 + 20); x++)
+                for (int x = xSegment * 20; x < Math.Min(Fields.GetLength(1), xSegment * 20 + 20); x++)
                 {
                     BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
                     var fieldString = (occupant?.ToString() ?? "   ");
                     var fieldColour = Field.FieldTextColour(Fields[y, x]);
-                    
+
                     if (user.XAxis == x && user.YAxis == y)
                     {
                         occupant = user;
@@ -211,39 +215,59 @@ namespace DungeonCrawler.Objects
             }
         }
 
-        public async Task PlayerMove(int x = 0, int y = 0)
+        public async Task PlayerMove(int x = 0, int y = 0, PlayerAction action = PlayerAction.Walk)
         {
             if (user.XAxis + x < 0 || user.XAxis + x >= Fields.GetLength(1)) return;
             if (user.YAxis + y < 0 || user.YAxis + y >= Fields.GetLength(0)) return;
 
-            var previousField = Tuple.Create(user.YAxis, user.XAxis);
-            var nextField = Tuple.Create(user.YAxis + y, user.XAxis + x);
-            if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough || user.Name.Equals("God"))
+            switch (action)
             {
-                var xSegmentPrevious = (int)user.XAxis/20;
-                var ySegmentPrevious = (int)user.YAxis/20;
-                user.XAxis += x;
-                user.YAxis += y;
-                var xSegmentAfter = (int)user.XAxis/20;
-                var ySegmentAfter = (int)user.YAxis/20;
+                case PlayerAction.Walk:
+                    var previousField = Tuple.Create(user.YAxis, user.XAxis);
+                    var nextField = Tuple.Create(user.YAxis + y, user.XAxis + x);
+                    if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough || user.Name.Equals("God"))
+                    {
+                        var xSegmentPrevious = (int)user.XAxis / 20;
+                        var ySegmentPrevious = (int)user.YAxis / 20;
+                        user.XAxis += x;
+                        user.YAxis += y;
+                        var xSegmentAfter = (int)user.XAxis / 20;
+                        var ySegmentAfter = (int)user.YAxis / 20;
 
-                if(xSegmentAfter != xSegmentPrevious || ySegmentAfter != ySegmentPrevious){
-                    await DrawMapSegment();
-                }
-                else{
-                    DrawField(user.XAxis, user.YAxis);
-                    DrawField(user.XAxis-x, user.YAxis-y);
-                }
+                        if (xSegmentAfter != xSegmentPrevious || ySegmentAfter != ySegmentPrevious)
+                        {
+                            await DrawMapSegment();
+                        }
+                        else
+                        {
+                            DrawField(user.XAxis, user.YAxis);
+                            DrawField(user.XAxis - x, user.YAxis - y);
+                        }
 
-                WritePlayerStats();
+                        WritePlayerStats();
 
-                await Program.Client.StatsChanged(user);
+                        await Program.Client.StatsChanged(user);
+                    }
+                    break;
+
+                case PlayerAction.Look:
+                    WriteLookAction(user.XAxis + x, user.YAxis + y);
+                    break;
             }
         }
 
-        public void WritePlayerStats(){
+        public void WritePlayerStats()
+        {
             Console.SetCursorPosition(0, 21);
             Console.WriteLine(user.GetStats());
+        }
+
+        public void WriteLookAction(int x, int y){
+            Console.SetCursorPosition(0, 24);
+            Console.WriteLine($"You see {Fields[y, x].ToString()}.");
+            if(BaseObjectDict.ContainsKey(Tuple.Create(y, x))){
+                Console.WriteLine($"On top, you see a {BaseObjectDict[Tuple.Create(y, x)].Name}.");
+            }
         }
 
         public void SetPlayer(int x = -1, int y = -1, string name = "")
@@ -257,7 +281,8 @@ namespace DungeonCrawler.Objects
             user = player;
         }
 
-        public Player GetPlayer(){
+        public Player GetPlayer()
+        {
             return user;
         }
 
@@ -302,15 +327,18 @@ namespace DungeonCrawler.Objects
             BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
         }
 
-        public void RemoveBaseObject(int x, int y){
-            if(BaseObjectDict.ContainsKey(Tuple.Create(y, x))){
+        public void RemoveBaseObject(int x, int y)
+        {
+            if (BaseObjectDict.ContainsKey(Tuple.Create(y, x)))
+            {
                 var obj = BaseObjectDict[Tuple.Create(y, x)];
                 BaseObjectDict.Remove(Tuple.Create(y, x));
                 BaseObjects.Remove(obj);
             }
         }
 
-        public Dictionary<Tuple<int, int>, BaseObject> GetBaseObjectDict(){
+        public Dictionary<Tuple<int, int>, BaseObject> GetBaseObjectDict()
+        {
             return BaseObjectDict;
         }
 
@@ -318,9 +346,9 @@ namespace DungeonCrawler.Objects
         {
             var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             var targetDir = Path.Combine(curDir, "map");
-            if(!Directory.Exists(targetDir))
+            if (!Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
-                
+
             using (var sw = new System.IO.StreamWriter($"{targetDir}\\map.json"))
             {
                 sw.WriteLine(JsonConvert.SerializeObject(this));
@@ -333,7 +361,7 @@ namespace DungeonCrawler.Objects
             {
                 var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
                 var targetDir = Path.Combine(curDir, "map");
-                if(!Directory.Exists(targetDir))
+                if (!Directory.Exists(targetDir))
                     Directory.CreateDirectory(targetDir);
 
                 using (var sr = new System.IO.StreamReader($"{targetDir}\\map.json"))
