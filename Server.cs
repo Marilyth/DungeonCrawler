@@ -15,9 +15,11 @@ namespace DungeonCrawler
     {
         private Dictionary<TcpClient, Player> clients;
         private static readonly int ServerPort = 11000;
+        public StringBuilder Log;
 
         public Server()
         {
+            Log = new StringBuilder();
             clients = new Dictionary<TcpClient, Player>();
         }
 
@@ -29,9 +31,10 @@ namespace DungeonCrawler
 
             while (true)
             {
-                Console.WriteLine("Waiting for clients to connect...");
+                Console.Write("Waiting for client to connect...");
                 var client = await listener.AcceptTcpClientAsync();
                 ClientConversation(client);
+                Console.WriteLine($"{(client.Client.RemoteEndPoint as IPEndPoint).Address}:{(client.Client.RemoteEndPoint as IPEndPoint).Port} connected!");
             }
         }
 
@@ -39,26 +42,80 @@ namespace DungeonCrawler
         {
             try
             {
-                await SendToClient("Available commands:\nWorldChanged>>\nDownloadMap>>\nDownloadPlayer>>", client);
+                var clientIP = $"{(client.Client.RemoteEndPoint as IPEndPoint).Address}:{(client.Client.RemoteEndPoint as IPEndPoint).Port}";
+                await SendToClient("Available commands:\nFieldChanged>>\n>>ObjectChanged>>{Tuple<int,int,Object>}\nObjectAppeared>>{Object}\nObjectDisappeared>>{Tuple<int,int>}\nStatsChanged>>\nDownloadMap>>\nDownloadPlayer>>", client);
                 while (true)
                 {
-                    var info = (await ObtainFromClient(null, client)).Split(">>");
-                    Console.WriteLine("Received command: " + info[0]);
-                    if (info[0].StartsWith("WorldChanged"))
+                    foreach (var command in (await ObtainFromClient(null, client)).Split("<<"))
                     {
-                        object[] parsed = JsonConvert.DeserializeObject<object[]>(info[1]);
-                        MapChange test = Enum.GetValues(typeof(MapChange)).Cast<MapChange>().ToList()[Convert.ToInt32(parsed[0])];
-                        Program.map.ServerWorldChanged(test, parsed[1], parsed[2]);
-                        await SendToAllClientsAsync(info[1], client);
-                    }
-                    else if (info[0].StartsWith("DownloadMap"))
-                    {
-                        await SendToClient(JsonConvert.SerializeObject(Program.map), client);
-                    }
-                    else if (info[0].StartsWith("DownloadPlayer"))
-                    {
-                        clients[client] = new Player(Program.map.Fields.GetLength(1) / 2, Program.map.Fields.GetLength(0) / 2, info[1]);
-                        await SendToClient(JsonConvert.SerializeObject(clients[client]), client);
+                        var info = command.Split(">>");
+                        Console.WriteLine("Received command: " + info[0]);
+                        if (info[0].StartsWith("DownloadMap"))
+                        {
+                            await SendToClient(JsonConvert.SerializeObject(Program.map), client);
+                        }
+                        else if (info[0].StartsWith("DownloadField"))
+                        {
+                            var field = JsonConvert.DeserializeObject<Tuple<int, int>>(info[1]);
+                            Player player = player = clients.Values.FirstOrDefault(x => x.XAxis == field.Item1 && x.YAxis == field.Item2);
+                            Program.map.GetBaseObjectDict().TryGetValue(field, out BaseObject o);
+                            await SendToClient(JsonConvert.SerializeObject(Tuple.Create(Program.map.Fields[field.Item2, field.Item1], o, player)), client);
+                        }
+                        else if (info[0].StartsWith("DownloadPlayer"))
+                        {
+                            clients[client] = new Player(Program.map.Fields.GetLength(1) / 2, Program.map.Fields.GetLength(0) / 2, info[1]);
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{clients[client].XAxis},{clients[client].YAxis}");
+                            await SendToClient(JsonConvert.SerializeObject(clients[client]), client);
+                        }
+                        else if (info[0].StartsWith("DownloadLog"))
+                        {
+                            var since = new DateTime(long.Parse(info[1]));
+                            StringBuilder log = new StringBuilder("Start");
+                            foreach (var b in Log.ToString().Split("\n"))
+                            {
+                                if (!String.Empty.Equals(b) && !b.Split(">>")[1].Split(",")[0].Equals(clientIP) && DateTime.Parse(b.Split(">>")[0]) > since)
+                                    log.AppendLine(b);
+                            }
+                            await SendToClient(log.ToString(), client);
+                        }
+                        else if (info[0].StartsWith("FieldChanged"))
+                        {
+                            //x, y, fieldtype
+                            Tuple<int, int, int> change = JsonConvert.DeserializeObject<Tuple<int, int, int>>(info[1]);
+                            Program.map.SetField((FieldType)change.Item3, change.Item1, change.Item2);
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item1},{change.Item2}");
+                        }
+                        else if (info[0].StartsWith("ObjectChanged"))
+                        {
+                            //x, y, Object
+                            Tuple<int, int, BaseObject> change = JsonConvert.DeserializeObject<Tuple<int, int, BaseObject>>(info[1]);
+                            Program.map.AddBaseObject(change.Item3);
+                            Program.map.RemoveBaseObject(change.Item1, change.Item2);
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item1},{change.Item2}");
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item3.XAxis},{change.Item3.YAxis}");
+                        }
+                        else if (info[0].StartsWith("ObjectAppeared"))
+                        {
+                            //Object
+                            BaseObject obj = JsonConvert.DeserializeObject<BaseObject>(info[1]);
+                            Program.map.AddBaseObject(obj);
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{obj.XAxis},{obj.YAxis}");
+                        }
+                        else if (info[0].StartsWith("ObjectDisappeared"))
+                        {
+                            //x, y
+                            Tuple<int, int> coor = JsonConvert.DeserializeObject<Tuple<int, int>>(info[1]);
+                            Program.map.RemoveBaseObject(coor.Item1, coor.Item2);
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{coor.Item1},{coor.Item2}");
+                        }
+                        else if (info[0].StartsWith("StatsChanged"))
+                        {
+                            //x, y
+                            Player updatedPlayer = JsonConvert.DeserializeObject<Player>(info[1]);
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{clients[client].XAxis},{clients[client].YAxis}");
+                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{updatedPlayer.XAxis},{updatedPlayer.YAxis}");
+                            clients[client] = updatedPlayer;
+                        }
                     }
                 }
             }
@@ -89,13 +146,14 @@ namespace DungeonCrawler
 
         public async Task<string> ObtainFromClient(string request, TcpClient client)
         {
-            if(request != null)
+            if (request != null)
                 await SendToClient(request, client);
 
             string str;
             NetworkStream stream = client.GetStream();
 
-            while(!stream.DataAvailable){
+            while (!stream.DataAvailable)
+            {
                 await Task.Delay(100);
             }
 

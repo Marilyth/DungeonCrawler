@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Timers;
 
 namespace DungeonCrawler.Objects
 {
@@ -14,6 +15,7 @@ namespace DungeonCrawler.Objects
         private Dictionary<Tuple<int, int>, BaseObject> BaseObjectDict;
         public List<BaseObject> BaseObjects;
         private Player user;
+        private DateTime Timer = DateTime.Now;
 
         public WorldMap(int xTotal, int yTotal)
         {
@@ -157,7 +159,25 @@ namespace DungeonCrawler.Objects
             return visibleFields;
         }
 
-        public void DrawVisibleMap()
+        public async Task DrawField(int x, int y){
+            var xConsole = (x%20)*3;
+            var yConsole = y%20;
+
+            BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
+            if (user.XAxis == x && user.YAxis == y){
+                occupant = user;
+            }
+
+            var fieldString = (occupant?.ToString() ?? "   ");
+            var fieldColour = Field.FieldTextColour(Fields[y, x]);
+
+            Console.SetCursorPosition(xConsole, yConsole);
+            Console.BackgroundColor = fieldColour;
+            Console.ForegroundColor = occupant?.GetColour() ?? ConsoleColor.Gray;
+            Console.Write(fieldString);
+        }
+
+        public async Task DrawVisibleMap()
         {
             //Calculate line of sight
             var visibleFields = GetLineOfSight();
@@ -195,6 +215,8 @@ namespace DungeonCrawler.Objects
                 }
                 Console.WriteLine();
             }
+
+            await Program.Client.InterpretLog();
         }
 
         public void DrawMap()
@@ -216,22 +238,20 @@ namespace DungeonCrawler.Objects
             }
         }
 
-        public void PlayerMove(int x = 0, int y = 0)
+        public async Task PlayerMove(int x = 0, int y = 0)
         {
             if (user.XAxis + x < 0 || user.XAxis + x >= Fields.GetLength(1)) return;
             if (user.YAxis + y < 0 || user.YAxis + y >= Fields.GetLength(0)) return;
 
             var previousField = Tuple.Create(user.YAxis, user.XAxis);
             var nextField = Tuple.Create(user.YAxis + y, user.XAxis + x);
-            if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough)
+            if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough || user.Name.Equals("God"))
             {
                 user.XAxis += x;
                 user.YAxis += y;
-            }
-            else if (user.Name.Equals("God"))
-            {
-                user.XAxis += x;
-                user.YAxis += y;
+                //DrawField(user.XAxis, user.YAxis);
+                //DrawField(user.XAxis-x, user.YAxis-y);
+                await Program.Client.StatsChanged(user);
             }
         }
 
@@ -261,7 +281,7 @@ namespace DungeonCrawler.Objects
 
         public async Task SetField(int type)
         {
-            if (user.Name?.Equals("God") ?? false)
+            if (user.Name?.StartsWith("God") ?? false)
             {
                 var types = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToArray();
                 Fields[user.YAxis, user.XAxis] = types[type % types.Length];
@@ -269,7 +289,8 @@ namespace DungeonCrawler.Objects
                 {
                     AddBaseObject(new BaseObject(user.XAxis, user.YAxis, "Wall"));
                 }
-                await ClientWorldChanged(MapChange.FieldChanged, Tuple.Create(user.YAxis, user.XAxis), Fields[user.YAxis, user.XAxis]);
+
+                await Program.Client.FieldChanged(user.XAxis, user.YAxis, Fields[user.YAxis, user.XAxis]);
             }
         }
 
@@ -287,45 +308,24 @@ namespace DungeonCrawler.Objects
             BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
         }
 
+        public void RemoveBaseObject(int x, int y){
+            if(BaseObjectDict.ContainsKey(Tuple.Create(y, x))){
+                var obj = BaseObjectDict[Tuple.Create(y, x)];
+                BaseObjectDict.Remove(Tuple.Create(y, x));
+                BaseObjects.Remove(obj);
+            }
+        }
+
+        public Dictionary<Tuple<int, int>, BaseObject> GetBaseObjectDict(){
+            return BaseObjectDict;
+        }
+
         public void SaveMap()
         {
             using (var sw = new System.IO.StreamWriter("data\\map.json"))
             {
                 sw.WriteLine(JsonConvert.SerializeObject(this));
             }
-        }
-
-        public async Task ClientWorldChanged(MapChange type, object before, object after){
-            string changeJSON = JsonConvert.SerializeObject(new object[]{
-                type, before, after
-            });
-
-            await Program.Client.SendToServer("WorldChanged>>"+changeJSON);
-        }
-
-        public void ServerWorldChanged(MapChange type, object before, object after){
-            switch(type){
-                case MapChange.ObjectAppeared:
-                    AddBaseObject(after as BaseObject);
-                    break;
-                case MapChange.ObjectDisappeared:
-                    BaseObject cur = before as BaseObject;
-                    BaseObjectDict.Remove(Tuple.Create(cur.YAxis, cur.XAxis));
-                    break;
-                case MapChange.ObjectMoved:
-                    BaseObject bef = before as BaseObject;
-                    BaseObject aft = after as BaseObject;
-                    BaseObjectDict.Remove(Tuple.Create(bef.YAxis, bef.XAxis));
-                    AddBaseObject(aft);
-                    break;
-                case MapChange.FieldChanged:
-                    FieldType fieldChange = Enum.GetValues(typeof(FieldType)).Cast<FieldType>().ToList()[Convert.ToInt32(after)];
-                    Tuple<int, int> index = JsonConvert.DeserializeObject<Tuple<int, int>>(before.ToString());
-                    Fields[index.Item1, index.Item2] = fieldChange;
-                    break;
-            }
-
-            SaveMap();
         }
 
         public static WorldMap LoadMap(string mapJson = null)
@@ -375,7 +375,6 @@ namespace DungeonCrawler.Objects
     public enum FieldType { Dirt, Grass, Water, Sand, Wall, Stone, None };
     public enum BaseObjectType { Wall };
     public enum BiomeType { Cave, Swamp, Grasslands, Desert };
-    public enum MapChange { ObjectMoved, ObjectAppeared, ObjectDisappeared, FieldChanged, StatsChanged };
 
     public static class RNGMapGeneration
     {

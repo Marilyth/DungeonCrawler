@@ -26,10 +26,10 @@ namespace DungeonCrawler
 
         public async Task Start()
         {
-            Console.SetWindowSize(181, 30);
-            information = new AllEnemies();
+            //Console.SetWindowSize(181, 30);
+            //information = new AllEnemies();
 
-            Menu();
+            await Menu();
             await Task.Delay(-1);
         }
 
@@ -83,33 +83,37 @@ namespace DungeonCrawler
             }
         }
 
-        public void InputLoop()
+        public async Task InputLoop()
         {
-            Console.Clear();
             Console.SetWindowSize(60, 30);
-            map.DrawVisibleMap();
+            Console.CursorVisible = false;
+            System.Threading.Timer timer = new System.Threading.Timer(async x => {
+                    Console.Clear();
+                    await map.DrawVisibleMap();
+                    Console.WriteLine(map.GetPlayer().GetStats());
+                }, null, dueTime: 0, period: 1000);
+                
             ConsoleKeyInfo cki;
             do
             {
-                cki = Console.ReadKey();
-                Console.Clear();
+                cki = Console.ReadKey(true);
 
                 switch (cki.Key)
                 {
                     case ConsoleKey.UpArrow:
-                        map.PlayerMove(0, -1);
+                        await map.PlayerMove(0, -1);
                         break;
                     case ConsoleKey.DownArrow:
-                        map.PlayerMove(0, 1);
+                        await map.PlayerMove(0, 1);
                         break;
                     case ConsoleKey.RightArrow:
-                        map.PlayerMove(1, 0);
+                        await map.PlayerMove(1, 0);
                         break;
                     case ConsoleKey.LeftArrow:
-                        map.PlayerMove(-1, 0);
+                        await map.PlayerMove(-1, 0);
                         break;
                     case ConsoleKey.Delete:
-                        Menu();
+                        await Menu();
                         return;
                     case ConsoleKey.S:
                         map.SaveMap();
@@ -121,12 +125,10 @@ namespace DungeonCrawler
                         break;
                     default:
                         var worked = int.TryParse("" + cki.KeyChar, out int number);
-                        if (worked) map.SetField(number);
+                        if (worked) await map.SetField(number);
                         break;
 
                 }
-                map.DrawVisibleMap();
-                Console.WriteLine(map.GetPlayer().GetStats());
 
             } while (cki.Key != ConsoleKey.Escape);
         }
