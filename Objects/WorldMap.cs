@@ -175,32 +175,24 @@ namespace DungeonCrawler.Objects
             Console.BackgroundColor = fieldColour;
             Console.ForegroundColor = occupant?.GetColour() ?? ConsoleColor.Gray;
             Console.Write(fieldString);
+
+            Console.ResetColor();
         }
 
-        public async Task DrawVisibleMap()
-        {
-            //Calculate line of sight
-            var visibleFields = GetLineOfSight();
+        public async Task DrawMapSegment(){
+            await Program.Client.InterpretLog();
+            Console.SetCursorPosition(0, 0);
 
-            for (int y = Math.Max(user.YAxis - 10, 0); y < Math.Min(Fields.GetLength(0) - 1, user.YAxis + 10); y++)
+            var xSegment = (int)user.XAxis/20;
+            var ySegment = (int)user.YAxis/20;
+            for (int y = ySegment*20; y < Math.Min(Fields.GetLength(0), ySegment*20 + 20); y++)
             {
-                for (int x = Math.Max(user.XAxis - 10, 0); x < Math.Min(Fields.GetLength(1) - 1, user.XAxis + 10); x++)
+                for (int x = xSegment*20; x < Math.Min(Fields.GetLength(1), xSegment*20 + 20); x++)
                 {
                     BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
                     var fieldString = (occupant?.ToString() ?? "   ");
                     var fieldColour = Field.FieldTextColour(Fields[y, x]);
-                    if (!visibleFields.Contains(Tuple.Create(x, y)))
-                    {
-                        fieldString = " ? ";
-                        if ((int)Field.FieldTextColour(Fields[y, x]) >= 9)
-                        {
-                            fieldColour = Field.FieldTextColour(Fields[y, x]) - 8;
-                        }
-                        else if (Field.FieldTextColour(Fields[y, x]) == ConsoleColor.Gray)
-                        {
-                            fieldColour = ConsoleColor.DarkGray;
-                        }
-                    }
+                    
                     if (user.XAxis == x && user.YAxis == y)
                     {
                         occupant = user;
@@ -209,27 +201,6 @@ namespace DungeonCrawler.Objects
 
                     Console.BackgroundColor = fieldColour;
                     Console.ForegroundColor = occupant?.GetColour() ?? ConsoleColor.Gray;
-
-                    Console.Write(fieldString);
-                    Console.ResetColor();
-                }
-                Console.WriteLine();
-            }
-
-            await Program.Client.InterpretLog();
-        }
-
-        public void DrawMap()
-        {
-            for (int j = 0; j < Fields.GetLength(0); j++)
-            {
-                for (int i = 0; i < Fields.GetLength(1); i++)
-                {
-                    var fieldString = "   ";//Field.FieldToString(Fields[i, j].Type);
-                    var fieldColour = Field.FieldTextColour(Fields[j, i]);
-
-                    Console.BackgroundColor = fieldColour;
-                    Console.ForegroundColor = ConsoleColor.Gray;
 
                     Console.Write(fieldString);
                     Console.ResetColor();
@@ -247,12 +218,30 @@ namespace DungeonCrawler.Objects
             var nextField = Tuple.Create(user.YAxis + y, user.XAxis + x);
             if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough || user.Name.Equals("God"))
             {
+                var xSegmentPrevious = (int)user.XAxis/20;
+                var ySegmentPrevious = (int)user.YAxis/20;
                 user.XAxis += x;
                 user.YAxis += y;
-                //DrawField(user.XAxis, user.YAxis);
-                //DrawField(user.XAxis-x, user.YAxis-y);
+                var xSegmentAfter = (int)user.XAxis/20;
+                var ySegmentAfter = (int)user.YAxis/20;
+
+                if(xSegmentAfter != xSegmentPrevious || ySegmentAfter != ySegmentPrevious){
+                    await DrawMapSegment();
+                }
+                else{
+                    DrawField(user.XAxis, user.YAxis);
+                    DrawField(user.XAxis-x, user.YAxis-y);
+                }
+
+                WritePlayerStats();
+
                 await Program.Client.StatsChanged(user);
             }
+        }
+
+        public void WritePlayerStats(){
+            Console.SetCursorPosition(0, 21);
+            Console.WriteLine(user.GetStats());
         }
 
         public void SetPlayer(int x = -1, int y = -1, string name = "")
@@ -270,13 +259,15 @@ namespace DungeonCrawler.Objects
             return user;
         }
 
-        public void SetField(FieldType type, int x, int y)
+        public async Task SetField(FieldType type, int x, int y)
         {
             Fields[y, x] = type;
             if (type == FieldType.Wall)
             {
                 AddBaseObject(new BaseObject(x, y, "Wall"));
             }
+
+            await DrawField(x, y);
         }
 
         public async Task SetField(int type)
@@ -291,6 +282,7 @@ namespace DungeonCrawler.Objects
                 }
 
                 await Program.Client.FieldChanged(user.XAxis, user.YAxis, Fields[user.YAxis, user.XAxis]);
+                await DrawField(user.XAxis, user.YAxis);
             }
         }
 

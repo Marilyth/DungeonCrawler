@@ -88,10 +88,11 @@ namespace DungeonCrawler
             Console.SetWindowSize(60, 30);
             Console.CursorVisible = false;
             System.Threading.Timer timer = new System.Threading.Timer(async x => {
-                    Console.Clear();
-                    await map.DrawVisibleMap();
-                    Console.WriteLine(map.GetPlayer().GetStats());
+                    await Client.InterpretLog();
                 }, null, dueTime: 0, period: 1000);
+
+            await map.DrawMapSegment();
+            map.WritePlayerStats();
                 
             ConsoleKeyInfo cki;
             do
