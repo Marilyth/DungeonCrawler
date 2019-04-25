@@ -25,7 +25,7 @@ namespace DungeonCrawler
 
         public async Task StartServer()
         {
-            IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+            IPAddress localAddr = IPAddress.Parse("0.0.0.0");
             var listener = new TcpListener(localAddr, ServerPort);
             listener.Start();
 

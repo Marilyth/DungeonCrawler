@@ -14,7 +14,7 @@ namespace DungeonCrawler
     {
         private TcpClient client;
         private string key = "";
-        private static readonly string ServerIP = "127.0.0.1";
+        private static readonly string ServerIP = "5.45.104.29";
         private DateTime lastSync;
 
         public Client()
@@ -25,7 +25,7 @@ namespace DungeonCrawler
         public async Task Connect()
         {
             Console.WriteLine("Connecting to server...");
-            var ip = IPAddress.Parse("127.0.0.1");
+            var ip = IPAddress.Parse(ServerIP);
             client = new TcpClient(ip.AddressFamily);
             client.Connect(ip, 11000);
             Console.WriteLine("Connected to server!");

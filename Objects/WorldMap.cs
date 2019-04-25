@@ -294,7 +294,7 @@ namespace DungeonCrawler.Objects
                 AddBaseObject(new BaseObject(x, y, "Wall"));
             }
 
-            await DrawField(x, y);
+            //await DrawField(x, y);
         }
 
         public async Task SetField(int type)
