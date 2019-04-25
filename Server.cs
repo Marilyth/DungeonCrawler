@@ -80,7 +80,7 @@ namespace DungeonCrawler
                         {
                             var since = new DateTime(long.Parse(info[1]));
                             StringBuilder log = new StringBuilder("Start");
-                            foreach (var b in Log.ToString().Split("\n"))
+                            foreach (var b in Log)
                             {
                                 if (!String.Empty.Equals(b) && !b.Split(">>")[1].Split(",")[0].Equals(clientIP) && DateTime.Parse(b.Split(">>")[0]) > since)
                                     log.AppendLine(b);

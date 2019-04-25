@@ -112,6 +112,8 @@ namespace DungeonCrawler
             {
                 Program.map.AddBaseObject(field.Item3);
             }
+
+            await Program.map.DrawField(x, y);
         }
 
         public async Task<bool> InterpretLog()
