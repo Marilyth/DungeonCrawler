@@ -15,11 +15,11 @@ namespace DungeonCrawler
     {
         private Dictionary<TcpClient, Player> clients;
         private static readonly int ServerPort = 11000;
-        public StringBuilder Log;
+        public List<string> Log;
 
         public Server()
         {
-            Log = new StringBuilder();
+            Log = new List<string>();
             clients = new Dictionary<TcpClient, Player>();
         }
 
@@ -28,6 +28,12 @@ namespace DungeonCrawler
             IPAddress localAddr = IPAddress.Parse("0.0.0.0");
             var listener = new TcpListener(localAddr, ServerPort);
             listener.Start();
+            Task.Run(() => {
+                while(true){
+                    Task.Delay(2000).Wait();
+                    Log = Log.SkipWhile(x => DateTime.Parse(x.Split(">>")[0]).AddSeconds(2) < DateTime.UtcNow).ToList();
+                }
+            });
 
             while (true)
             {
@@ -67,7 +73,7 @@ namespace DungeonCrawler
                         else if (info[0].StartsWith("DownloadPlayer"))
                         {
                             clients[client] = new Player(Program.map.Fields.GetLength(1) / 2, Program.map.Fields.GetLength(0) / 2, info[1]);
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{clients[client].XAxis},{clients[client].YAxis}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, Change at|{clients[client].XAxis},{clients[client].YAxis}");
                             await SendToClient(JsonConvert.SerializeObject(clients[client]), client);
                         }
                         else if (info[0].StartsWith("DownloadLog"))
@@ -86,7 +92,7 @@ namespace DungeonCrawler
                             //x, y, fieldtype
                             Tuple<int, int, int> change = JsonConvert.DeserializeObject<Tuple<int, int, int>>(info[1]);
                             Program.map.SetField((FieldType)change.Item3, change.Item1, change.Item2);
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item1},{change.Item2}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item1},{change.Item2}");
                         }
                         else if (info[0].StartsWith("ObjectChanged"))
                         {
@@ -94,29 +100,29 @@ namespace DungeonCrawler
                             Tuple<int, int, BaseObject> change = JsonConvert.DeserializeObject<Tuple<int, int, BaseObject>>(info[1]);
                             Program.map.AddBaseObject(change.Item3);
                             Program.map.RemoveBaseObject(change.Item1, change.Item2);
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item1},{change.Item2}");
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{change.Item3.XAxis},{change.Item3.YAxis}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, ObjectChanged|{change.Item1},{change.Item2}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, ObjectChanged|{change.Item3.XAxis},{change.Item3.YAxis}");
                         }
                         else if (info[0].StartsWith("ObjectAppeared"))
                         {
                             //Object
                             BaseObject obj = JsonConvert.DeserializeObject<BaseObject>(info[1]);
                             Program.map.AddBaseObject(obj);
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{obj.XAxis},{obj.YAxis}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, ObjectAppeared|{obj.XAxis},{obj.YAxis}");
                         }
                         else if (info[0].StartsWith("ObjectDisappeared"))
                         {
                             //x, y
                             Tuple<int, int> coor = JsonConvert.DeserializeObject<Tuple<int, int>>(info[1]);
                             Program.map.RemoveBaseObject(coor.Item1, coor.Item2);
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{coor.Item1},{coor.Item2}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, ObjectDisappeared|{coor.Item1},{coor.Item2}");
                         }
                         else if (info[0].StartsWith("StatsChanged"))
                         {
                             //x, y
                             Player updatedPlayer = JsonConvert.DeserializeObject<Player>(info[1]);
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{clients[client].XAxis},{clients[client].YAxis}");
-                            Log.AppendLine($"{DateTime.UtcNow}>>{clientIP}, Change at|{updatedPlayer.XAxis},{updatedPlayer.YAxis}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, StatsChanged|{clients[client].XAxis},{clients[client].YAxis}");
+                            Log.Add($"{DateTime.UtcNow}>>{clientIP}, StatsChanged|{updatedPlayer.XAxis},{updatedPlayer.YAxis}");
                             clients[client] = updatedPlayer;
                         }
                     }
