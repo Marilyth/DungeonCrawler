@@ -8,6 +8,7 @@ using System.ComponentModel;
 using Newtonsoft.Json;
 using System.Globalization;
 using DungeonCrawler.Objects;
+using DungeonCrawler.Networking;
 
 namespace DungeonCrawler
 {
@@ -53,12 +54,13 @@ namespace DungeonCrawler
             {
                 case LaunchType.StartClient:
                     Client = new Client();
-                    await Task.Run(() => Client.Connect());
+                    Console.Write("What is the server IP?: ");
+                    await Client.Connect(Console.ReadLine());
+                    Task.Run(Client.StartReceiver);
                     Console.Write("What is your name?: ");
-                    var player = await Client.DownloadPlayer(Console.ReadLine());
-                    map = await Client.DownloadMap();
-                    map.SetPlayer(player);
-                    InputLoop();
+                    await Client.DownloadMap();
+                    await Client.DownloadPlayer(Console.ReadLine());
+                    Client.PlayerDownloaded += () => Task.Run(InputLoop);
                     break;
                 case LaunchType.StartServer:
                     switch (ChooseEnum<MenuOptions>())
@@ -72,9 +74,11 @@ namespace DungeonCrawler
                             Console.WriteLine("Choose your biome");
                             var biome = ChooseEnum<Objects.BiomeType>();
                             map.FillMapRandom(width, height, biome, 0, 0);
+                            Console.Clear();
                             break;
                         case MenuOptions.LoadExistingWorld:
                             map = WorldMap.LoadMap();
+                            Console.Clear();
                             break;
                     }
                     Server = new Server();
@@ -86,18 +90,16 @@ namespace DungeonCrawler
         public async Task InputLoop()
         {
             Console.SetWindowSize(60, 30);
+            Console.Clear();
             Console.CursorVisible = false;
-            System.Threading.Timer timer = new System.Threading.Timer(async x => {
-                    await Client.InterpretLog();
-                }, null, dueTime: 0, period: 1000);
 
-            await map.DrawMapSegment();
             map.WritePlayerStats();
             WorldMap.PlayerAction action = WorldMap.PlayerAction.Walk;
                 
             ConsoleKeyInfo cki;
             do
             {
+                await map.DrawMapSegment();
                 cki = Console.ReadKey(true);
 
                 switch (cki.Key)

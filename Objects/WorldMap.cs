@@ -15,7 +15,9 @@ namespace DungeonCrawler.Objects
     {
         public FieldType[,] Fields;
         private Dictionary<Tuple<int, int>, BaseObject> BaseObjectDict;
-        public List<BaseObject> BaseObjects;
+        //x, y, object
+        public List<Tuple<int, int, string>> BaseObjects;
+        private List<Player> otherPlayers;
         private Player user;
         public enum PlayerAction { Walk, Look, Use, Push, Pull, Combat }
         private DateTime Timer = DateTime.Now;
@@ -24,7 +26,7 @@ namespace DungeonCrawler.Objects
         {
             Fields = new FieldType[yTotal, xTotal];
             BaseObjectDict = new Dictionary<Tuple<int, int>, BaseObject>();
-            BaseObjects = new List<BaseObject>();
+            BaseObjects = new List<Tuple<int, int, string>>();
 
             for (int i = 0; i < xTotal; i++)
             {
@@ -150,7 +152,7 @@ namespace DungeonCrawler.Objects
                 var worked = BaseObjectDict.TryGetValue(Tuple.Create(curField.Item2, curField.Item1), out BaseObject occupant);
                 if (worked)
                 {
-                    inLineOfSight = occupant?.Visibility != ObjectVisibility.Occupying;
+                    inLineOfSight = occupant?.IsSeeThrough ?? true;
                 }
 
                 lastField = curField;
@@ -162,31 +164,34 @@ namespace DungeonCrawler.Objects
             return visibleFields;
         }
 
-        public async Task DrawField(int x, int y)
+        public void DrawField(int x, int y)
         {
-            var xConsole = (x % 20) * 3;
-            var yConsole = y % 20;
-
-            BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
-            if (user.XAxis == x && user.YAxis == y)
+            if ((int)(user.XAxis / 20) == (int)(x / 20)
+                && (int)(user.YAxis / 20) == (int)(y / 20))
             {
-                occupant = user;
+                var xConsole = (x % 20) * 3;
+                var yConsole = y % 20;
+
+                BaseObjectDict.TryGetValue(Tuple.Create(y, x), out BaseObject occupant);
+                if (user.XAxis == x && user.YAxis == y)
+                {
+                    occupant = user;
+                }
+
+                var fieldString = (occupant?.ToString() ?? "   ");
+                var fieldColour = Field.FieldTextColour(Fields[y, x]);
+
+                Console.SetCursorPosition(xConsole, yConsole);
+                Console.BackgroundColor = fieldColour;
+                Console.ForegroundColor = occupant?.GetColour() ?? ConsoleColor.Gray;
+                Console.Write(fieldString);
+
+                Console.ResetColor();
             }
-
-            var fieldString = (occupant?.ToString() ?? "   ");
-            var fieldColour = Field.FieldTextColour(Fields[y, x]);
-
-            Console.SetCursorPosition(xConsole, yConsole);
-            Console.BackgroundColor = fieldColour;
-            Console.ForegroundColor = occupant?.GetColour() ?? ConsoleColor.Gray;
-            Console.Write(fieldString);
-
-            Console.ResetColor();
         }
 
         public async Task DrawMapSegment()
         {
-            await Program.Client.InterpretLog();
             Console.SetCursorPosition(0, 0);
 
             var xSegment = (int)user.XAxis / 20;
@@ -225,7 +230,7 @@ namespace DungeonCrawler.Objects
                 case PlayerAction.Walk:
                     var previousField = Tuple.Create(user.YAxis, user.XAxis);
                     var nextField = Tuple.Create(user.YAxis + y, user.XAxis + x);
-                    if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].isWalkThrough || user.Name.Equals("God"))
+                    if (!BaseObjectDict.ContainsKey(nextField) || BaseObjectDict[nextField].IsWalkThrough || user.Name.Equals("God"))
                     {
                         var xSegmentPrevious = (int)user.XAxis / 20;
                         var ySegmentPrevious = (int)user.YAxis / 20;
@@ -262,11 +267,13 @@ namespace DungeonCrawler.Objects
             Console.WriteLine(user.GetStats());
         }
 
-        public void WriteLookAction(int x, int y){
+        public void WriteLookAction(int x, int y)
+        {
             Console.SetCursorPosition(0, 24);
             Console.WriteLine($"You see {Fields[y, x].ToString()}.");
-            if(BaseObjectDict.ContainsKey(Tuple.Create(y, x))){
-                Console.WriteLine($"On top, you see a {BaseObjectDict[Tuple.Create(y, x)].Name}.");
+            if (BaseObjectDict.ContainsKey(Tuple.Create(y, x)))
+            {
+                Console.WriteLine($"On top, {BaseObjectDict[Tuple.Create(y, x)].OnLook(user)}");
             }
         }
 
@@ -305,26 +312,30 @@ namespace DungeonCrawler.Objects
                 Fields[user.YAxis, user.XAxis] = types[type % types.Length];
                 if (types[type % types.Length] == FieldType.Wall)
                 {
-                    AddBaseObject(new BaseObject(user.XAxis, user.YAxis, "Wall"));
+                    var wall = new BaseObject(user.XAxis, user.YAxis, "Wall");
+                    wall.SaveObject();
+                    AddBaseObject(wall);
                 }
 
                 await Program.Client.FieldChanged(user.XAxis, user.YAxis, Fields[user.YAxis, user.XAxis]);
-                await DrawField(user.XAxis, user.YAxis);
+                DrawField(user.XAxis, user.YAxis);
             }
         }
 
         public void LoadBaseObjects()
         {
-            foreach (BaseObject o in BaseObjects)
+            foreach (var o in BaseObjects)
             {
-                BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
+                BaseObjectDict[Tuple.Create(o.Item2, o.Item1)] = BaseObject.GetObject(o.Item3);
             }
         }
 
         public void AddBaseObject(BaseObject o)
         {
-            BaseObjects.Add(o);
-            BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
+            if (BaseObjectDict.ContainsKey(Tuple.Create(o.YAxis, o.XAxis)))
+                BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)].Above = o;
+            else
+                BaseObjectDict[Tuple.Create(o.YAxis, o.XAxis)] = o;
         }
 
         public void RemoveBaseObject(int x, int y)
@@ -333,7 +344,11 @@ namespace DungeonCrawler.Objects
             {
                 var obj = BaseObjectDict[Tuple.Create(y, x)];
                 BaseObjectDict.Remove(Tuple.Create(y, x));
-                BaseObjects.Remove(obj);
+                if (obj.Above != null)
+                {
+                    obj.Above.Below = null;
+                    BaseObjectDict[Tuple.Create(y, x)] = obj.Above;
+                }
             }
         }
 
@@ -344,8 +359,9 @@ namespace DungeonCrawler.Objects
 
         public void SaveMap()
         {
-            var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var targetDir = Path.Combine(curDir, "map");
+            BaseObjects = BaseObjectDict.Select(x => Tuple.Create(x.Key.Item2, x.Key.Item1, x.Value.Name)).ToList();
+            var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Split("DungeonCrawler").First();
+            var targetDir = Path.Combine(curDir, "DungeonCrawler", "map");
             if (!Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
 
@@ -359,8 +375,8 @@ namespace DungeonCrawler.Objects
         {
             if (mapJson == null)
             {
-                var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-                var targetDir = Path.Combine(curDir, "map");
+                var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Split("DungeonCrawler").First();
+                var targetDir = Path.Combine(curDir, "DungeonCrawler", "map");
                 if (!Directory.Exists(targetDir))
                     Directory.CreateDirectory(targetDir);
 
@@ -404,7 +420,7 @@ namespace DungeonCrawler.Objects
         }
     }
 
-    public enum FieldType { Dirt, Grass, Water, Sand, Wall, Stone, None };
+    public enum FieldType { Dirt, Grass, Water, Sand, Wall, Stone, None, Fire, Ice, Energy, Physical, Healing };
     public enum BaseObjectType { Wall };
     public enum BiomeType { Cave, Swamp, Grasslands, Desert };
 

@@ -1,9 +1,9 @@
 ﻿using System;
-using System.IO;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using System.Reflection;
+using Newtonsoft.Json;
 
 namespace DungeonCrawler.Objects
 {
@@ -17,7 +17,7 @@ namespace DungeonCrawler.Objects
         }
 
         public static double LevelToExp(int x) => (50 * (x * x));
-        public static double ExpToLevel(int y) => (Math.Sqrt(y/50));
+        public static double ExpToLevel(int y) => (Math.Sqrt(y / 50));
 
         public string CalcNextLevel()
         {
@@ -38,8 +38,8 @@ namespace DungeonCrawler.Objects
         public string GetStats()
         {
             return $"HP: {HP}/{HPMax}\n" +
-                   $"Level: {(int)ExpToLevel(Exp)}  ({CalcNextLevel()})\n"+
-                   $"Gold: {Gold}\n"+
+                   $"Level: {(int)ExpToLevel(Exp)}  ({CalcNextLevel()})\n" +
+                   $"Gold: {Gold}\n" +
                    $"Position: ({XAxis}x, {YAxis}y)";
         }
 
@@ -48,7 +48,8 @@ namespace DungeonCrawler.Objects
             //ToDo: Write to Server
         }
 
-        public static Player GetPlayerAsync(string name){
+        public static Player GetPlayerAsync(string name)
+        {
             //ToDo: Request player from Server
             return new Player(0, 0);
         }
@@ -57,8 +58,43 @@ namespace DungeonCrawler.Objects
         //    return "[P]";
         //}
 
-        public override ConsoleColor GetColour(){
+        public override ConsoleColor GetColour()
+        {
             return ConsoleColor.Blue;
+        }
+
+        public static Player GetPlayer(string Id)
+        {
+            var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Split("DungeonCrawler").First();
+            var targetDir = Path.Combine(curDir, "DungeonCrawler", "players");
+            if (!Directory.Exists(targetDir))
+                Directory.CreateDirectory(targetDir);
+
+            try
+            {
+                using (var sr = new System.IO.StreamReader($"{targetDir}\\{Id}.json"))
+                {
+                    var obj = JsonConvert.DeserializeObject<Player>(sr.ReadToEnd());
+                    return obj;
+                }
+            }
+            catch
+            {
+                return new Player((int)Program.map.Fields.GetLongLength(1) / 2, (int)Program.map.Fields.GetLongLength(0) / 2, Id);
+            }
+        }
+
+        public void SavePlayer()
+        {
+            var curDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Split("DungeonCrawler").First();
+            var targetDir = Path.Combine(curDir, "DungeonCrawler", "players");
+            if (!Directory.Exists(targetDir))
+                Directory.CreateDirectory(targetDir);
+
+            using (var sr = new System.IO.StreamWriter($"{targetDir}\\{Name}.json"))
+            {
+                sr.WriteLine(JsonConvert.SerializeObject(this));
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading.Tasks;
@@ -8,35 +9,33 @@ using Newtonsoft.Json;
 using Microsoft.Win32.SafeHandles;
 using DungeonCrawler.Objects;
 
-namespace DungeonCrawler
+namespace DungeonCrawler.Networking
 {
     public class Client
     {
         private TcpClient client;
         private string key = "";
-        private static readonly string ServerIP = "5.45.104.29";
         private DateTime lastSync;
+        public event Action PlayerDownloaded;
 
         public Client()
         {
             lastSync = DateTime.UtcNow;
         }
 
-        public async Task Connect()
+        public async Task Connect(string IP)
         {
             Console.WriteLine("Connecting to server...");
-            var ip = IPAddress.Parse(ServerIP);
+            var ip = IPAddress.Parse(IP);
             client = new TcpClient(ip.AddressFamily);
             client.Connect(ip, 11000);
             Console.WriteLine("Connected to server!");
-            Console.WriteLine(await ObtainFromServer());
         }
 
-        public async Task<WorldMap> DownloadMap()
+        public async Task DownloadMap()
         {
             Console.WriteLine("Downloading Map...");
-            var mapJSON = await ObtainFromServer("DownloadMap>><<");
-            return JsonConvert.DeserializeObject<WorldMap>(mapJSON);
+            await SendToServer("DownloadMap>><<");
         }
 
         public async Task SaveMap()
@@ -44,11 +43,10 @@ namespace DungeonCrawler
             await SendToServer("SaveMap>><<");
         }
 
-        public async Task<Player> DownloadPlayer(string name)
+        public async Task DownloadPlayer(string name)
         {
             Console.WriteLine("Downloading Player...");
-            var playerJSON = await ObtainFromServer("DownloadPlayer>>" + name + "<<");
-            return JsonConvert.DeserializeObject<Player>(playerJSON);
+            await SendToServer("DownloadPlayer>>" + name + "<<");
         }
 
         public async Task FieldChanged(int x, int y, FieldType type)
@@ -92,48 +90,65 @@ namespace DungeonCrawler
             await Program.Client.SendToServer("StatsChanged>>" + changeJSON + "<<");
         }
 
-        public async Task DownloadPlayers()
-        {
-
-        }
-
         public async Task DownloadField(int x, int y)
         {
-            var response = await ObtainFromServer($"DownloadField>>{JsonConvert.SerializeObject(Tuple.Create(x, y))}<<");
-            Tuple<FieldType, BaseObject, Player> field = JsonConvert.DeserializeObject<Tuple<FieldType, BaseObject, Player>>(response);
+            await SendToServer($"DownloadField>>{JsonConvert.SerializeObject(Tuple.Create(x, y))}<<");
+        }
 
-            Program.map.SetField(field.Item1, x, y);
-            Program.map.RemoveBaseObject(x, y);
-            if (field.Item2 != null)
-            {
-                Program.map.AddBaseObject(field.Item2);
-            }
+        public async Task ReceivedField(Tuple<Tuple<int, int>, FieldType, BaseObject, Player> field){
+            Program.map.SetField(field.Item2, field.Item1.Item1, field.Item1.Item2);
+            Program.map.RemoveBaseObject(field.Item1.Item1, field.Item1.Item2);
             if (field.Item3 != null)
             {
                 Program.map.AddBaseObject(field.Item3);
             }
-
-            await Program.map.DrawField(x, y);
-        }
-
-        public async Task<bool> InterpretLog()
-        {
-            var logTime = DateTime.UtcNow;
-            var log = await ObtainFromServer($"DownloadLog>>{lastSync.Ticks + 1}<<");
-            lastSync = logTime;
-            bool hasChanged = false;
-            
-            foreach (var entry in log.Split("\n"))
+            if (field.Item4 != null)
             {
-                if (!string.Empty.Equals(entry) && !entry.Equals("Start"))
-                {
-                    var coordinates = entry.Split("|")[1].Split(",");
-                    await DownloadField(int.Parse(coordinates[0]), int.Parse(coordinates[1]));
-                    hasChanged = true;
-                }
+                Program.map.AddBaseObject(field.Item4);
             }
 
-            return hasChanged;
+            Program.map.DrawField(field.Item1.Item1, field.Item1.Item2);
+        }
+
+        public async Task ReceivedLog(string entry)
+        {
+            var coordinates = entry.Split("|")[1].Split(",");
+            await DownloadField(int.Parse(coordinates[0]), int.Parse(coordinates[1]));
+        }
+
+        public async Task StartReceiver(){
+            while(true){
+                await HandleCommand(await ObtainFromServer());
+            }
+        }
+
+        public async Task HandleCommand(string commandString)
+        {
+            var commands = commandString.Split("<<");
+            foreach (var command in commands)
+            {
+                var info = command.Split(">>");
+
+                switch (info[0])
+                {
+                    case "DownloadLog":
+                        ReceivedLog(info.Last());
+                        break;
+                    case "DownloadField":
+                        var field = JsonConvert.DeserializeObject<Tuple<Tuple<int, int>, FieldType, BaseObject, Player>>(info.Last());
+                        ReceivedField(field);
+                        break;
+                    case "DownloadMap":
+                        Program.map = JsonConvert.DeserializeObject<WorldMap>(info.Last());
+                        break;
+                    case "DownloadPlayer":
+                        Program.map.SetPlayer(JsonConvert.DeserializeObject<Player>(info.Last()));
+                        PlayerDownloaded.Invoke();
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         public async Task SendToServer(string data)
@@ -156,12 +171,9 @@ namespace DungeonCrawler
                 string str;
                 NetworkStream stream = client.GetStream();
 
-                int timedOut = 0;
                 while (!stream.DataAvailable)
                 {
                     Task.Delay(100).Wait();
-                    timedOut++;
-                    if (timedOut > 20) return "";
                 }
 
                 byte[] buffer = new byte[1024];
