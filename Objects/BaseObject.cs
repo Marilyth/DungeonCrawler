@@ -53,7 +53,7 @@ namespace DungeonCrawler.Objects
             if (!Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
 
-            using (var sr = new System.IO.StreamReader($"{targetDir}\\{Id}.json"))
+            using (var sr = new System.IO.StreamReader($"{Path.Combine(targetDir, $"{Id}.json")}"))
             {
                 var obj = JsonConvert.DeserializeObject<BaseObject>(sr.ReadToEnd());
                 return obj;
@@ -66,7 +66,7 @@ namespace DungeonCrawler.Objects
             if (!Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
 
-            using (var sr = new System.IO.StreamWriter($"{targetDir}\\{Name}.json"))
+            using (var sr = new System.IO.StreamWriter($"{Path.Combine(targetDir, $"{Name}.json")}"))
             {
                 sr.WriteLine(JsonConvert.SerializeObject(this));
             }

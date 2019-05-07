@@ -365,7 +365,7 @@ namespace DungeonCrawler.Objects
             if (!Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
 
-            using (var sw = new System.IO.StreamWriter($"{targetDir}\\map.json"))
+            using (var sw = new System.IO.StreamWriter($"{Path.Combine(targetDir, $"map.json")}"))
             {
                 sw.WriteLine(JsonConvert.SerializeObject(this));
             }
@@ -380,7 +380,7 @@ namespace DungeonCrawler.Objects
                 if (!Directory.Exists(targetDir))
                     Directory.CreateDirectory(targetDir);
 
-                using (var sr = new System.IO.StreamReader($"{targetDir}\\map.json"))
+                using (var sr = new System.IO.StreamReader($"{Path.Combine(targetDir, $"map.json")}"))
                 {
                     var map = JsonConvert.DeserializeObject<WorldMap>(sr.ReadToEnd());
                     map.LoadBaseObjects();
